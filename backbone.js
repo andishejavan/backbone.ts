@@ -578,6 +578,10 @@ var __extends = this.__extends || function (d, b) {
             };
             this.forEach = Collection.prototype.each;
             this.detect = Collection.prototype.find;
+            this.select = Collection.prototype.filter;
+            this.every = Collection.prototype.all;
+            this.some = Collection.prototype.any;
+            this.include = Collection.prototype.contains;
             options || (options = {
             });
             if(options.model) {
@@ -889,68 +893,20 @@ var __extends = this.__extends || function (d, b) {
         Collection.prototype.filter = function (iterator, context) {
             return Backbone._.filter(this.models, iterator, context);
         };
-        Collection.prototype.select = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.reject = function (iterator, context) {
+            return Backbone._.reject(this.models, iterator, context);
         };
-        Collection.prototype.reject = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.all = function (iterator, context) {
+            return Backbone._.all(this.models, iterator, context);
         };
-        Collection.prototype.every = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.any = function (iterator, context) {
+            return Backbone._.any(this.models, iterator, context);
         };
-        Collection.prototype.all = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.contains = function (model) {
+            return Backbone._.contains(this.models, model);
         };
-        Collection.prototype.some = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
-        };
-        Collection.prototype.any = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
-        };
-        Collection.prototype.include = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
-        };
-        Collection.prototype.contains = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
-        };
-        Collection.prototype.invoke = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.invoke = function (methodName) {
+            Backbone._.invoke(this.models, methodName, arguments);
         };
         Collection.prototype.max = function () {
             var args = [];

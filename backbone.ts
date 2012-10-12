@@ -875,104 +875,99 @@ export module Backbone {
 			return _.filter(this.models, iterator, context);
 		}
 
-		public select(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public select = Collection.prototype.filter;
+
+		public reject(iterator: (model: Model) => bool, context?: any): Model[] {
+			return _.reject(this.models, iterator, context);
 		}
 
-		public reject(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public all(iterator: (model: Model) => bool, context?: any): bool {
+			return _.all(this.models, iterator, context);
 		}
 
-		public every(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public every = Collection.prototype.all;
+
+		public any(iterator: (model: Model) => bool, context?: any): bool {
+			return _.any(this.models, iterator, context);
 		}
 
-		public all(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public some = Collection.prototype.any;
+
+		public contains(model: Model): bool {
+			return _.contains(this.models, model);
 		}
 
-		public some(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public include = Collection.prototype.contains;
+
+		public invoke(methodName: string, ...args: any[]): void {
+			_.invoke(this.models, methodName, args);
 		}
 
-		public any(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public max(iterator?: (model: Model) => any, context?: any): Model {
+			return _.max(this.models, iterator, context);
 		}
 
-		public include(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public min(iterator?: (model: Model) => any, context?: any): Model {
+			return _.min(this.models, iterator, context);
 		}
 
-		public contains(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public sortBy(iterator: (model: Model) => any, context?: any): Model[] {
+			return _.sortBy(this.models, iterator, context);
 		}
 
-		public invoke(...args: any[]) {
-			throw new Error("Not implemented exception.");
-		}
-
-		public max(...args: any[]) {
-			throw new Error("Not implemented exception.");
-		}
-
-		public min(...args: any[]) {
-			throw new Error("Not implemented exception.");
-		}
-
-		public sortBy(...args: any[]): Model[] {
-			throw new Error("Not implemented exception.");
+		public groupBy(iterator: (model: Model) => any): any {
+			return _.groupBy(this.models, iterator);
 		}
 
 		public sortedIndex(...args: any[]) {
 			throw new Error("Not implemented exception.");
 		}
 
-		public toArray(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public toArray(): Model[] {
+			return _.toArray(this.models);
 		}
 
-		public size(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public size(): number {
+			return _.size(this.models);
 		}
 
-		public first(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public first(): Model {
+			return _.first(this.models);
 		}
 
-		public initial(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public initial(n?: number): Model[] {
+			return _.initial(this.models, n);
 		}
 
-		public rest(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public last(n?: number): Model[] {
+			return _.last(this.models, n);
 		}
 
-		public last(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public rest(index?: number): Model[] {
+			return _.rest(this.models, index);
 		}
 
-		public without(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		// todo: not sure if passing the arguments like this will work
+		public without(...values: any[]) {
+			return _.without(this.models, arguments)
 		}
 
-		public indexOf(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		// isSorted: bool => Tells the function to use more efficient binary search
+		// isSorted: number => Tells the function to start looking from index 
+		public indexOf(model: Model, isSorted?: any): number {
+			return _.indexOf(this.models, model, isSorted);
 		}
 
-		public shuffle(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public lastIndexOf(model: Model, fromIndex?: number): number {
+			return _.lastIndexOf(this.models, model, fromIndex);
 		}
 
-		public lastIndexOf(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public shuffle(): Model[] {
+			return _.shuffle(this.models);
 		}
 
-		public isEmpty(...args: any[]) {
-			throw new Error("Not implemented exception.");
-		}
-
-		public groupBy(...args: any[]) {
-			throw new Error("Not implemented exception.");
+		public isEmpty() {
+			return _.isEmpty(this.models);
 		}
 	}
 }
