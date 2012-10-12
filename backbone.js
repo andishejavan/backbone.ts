@@ -906,28 +906,23 @@ var __extends = this.__extends || function (d, b) {
             return Backbone._.contains(this.models, model);
         };
         Collection.prototype.invoke = function (methodName) {
-            Backbone._.invoke(this.models, methodName, arguments);
-        };
-        Collection.prototype.max = function () {
             var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
+            for (var _i = 0; _i < (arguments.length - 1); _i++) {
+                args[_i] = arguments[_i + 1];
             }
-            throw new Error("Not implemented exception.");
+            Backbone._.invoke(this.models, methodName, args);
         };
-        Collection.prototype.min = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.max = function (iterator, context) {
+            return Backbone._.max(this.models, iterator, context);
         };
-        Collection.prototype.sortBy = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.min = function (iterator, context) {
+            return Backbone._.min(this.models, iterator, context);
+        };
+        Collection.prototype.sortBy = function (iterator, context) {
+            return Backbone._.sortBy(this.models, iterator, context);
+        };
+        Collection.prototype.groupBy = function (iterator) {
+            return Backbone._.groupBy(this.models, iterator);
         };
         Collection.prototype.sortedIndex = function () {
             var args = [];
@@ -937,92 +932,142 @@ var __extends = this.__extends || function (d, b) {
             throw new Error("Not implemented exception.");
         };
         Collection.prototype.toArray = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+            return Backbone._.toArray(this.models);
         };
         Collection.prototype.size = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+            return Backbone._.size(this.models);
         };
         Collection.prototype.first = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+            return Backbone._.first(this.models);
         };
-        Collection.prototype.initial = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.initial = function (n) {
+            return Backbone._.initial(this.models, n);
         };
-        Collection.prototype.rest = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.last = function (n) {
+            return Backbone._.last(this.models, n);
         };
-        Collection.prototype.last = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.rest = function (index) {
+            return Backbone._.rest(this.models, index);
         };
         Collection.prototype.without = function () {
-            var args = [];
+            var values = [];
             for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
+                values[_i] = arguments[_i + 0];
             }
-            throw new Error("Not implemented exception.");
+            return Backbone._.without(this.models, arguments);
         };
-        Collection.prototype.indexOf = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.indexOf = function (model, isSorted) {
+            return Backbone._.indexOf(this.models, model, isSorted);
+        };
+        Collection.prototype.lastIndexOf = function (model, fromIndex) {
+            return Backbone._.lastIndexOf(this.models, model, fromIndex);
         };
         Collection.prototype.shuffle = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
-        };
-        Collection.prototype.lastIndexOf = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+            return Backbone._.shuffle(this.models);
         };
         Collection.prototype.isEmpty = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
-        };
-        Collection.prototype.groupBy = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+            return Backbone._.isEmpty(this.models);
         };
         return Collection;
     })(Base);
     Backbone.Collection = Collection;    
+    var Router = (function (_super) {
+        __extends(Router, _super);
+        function Router(options) {
+                _super.call(this);
+            options || (options = {
+            });
+            if(options.routes) {
+                this.routes = options.routes;
+            }
+            this._bindRoutes();
+        }
+        Router.namedParam = /:\w+/g;
+        Router.splatParam = /\*\w+/g;
+        Router.escapeRegExp = /[-[\]{}()+?.,\\^$|#\s]/g;
+        Router.prototype.route = function (route, name, callback) {
+            Backbone.history || (Backbone.history = new History());
+            if(!Backbone._.isRegExp(route)) {
+                route = this._routeToRegExp(route);
+            }
+            if(!callback) {
+                callback = this[name];
+            }
+            Backbone.history.route(route, Backbone._.bind(function (fragment) {
+                var args = this._extractParameters(route, fragment);
+                callback && callback.apply(this, args);
+                this.trigger.apply(this, [
+                    'route:' + name
+                ].concat(args));
+                Backbone.history.trigger('route', this, name, args);
+            }, this));
+            return this;
+        };
+        Router.prototype.navigate = function (fragment, options) {
+            Backbone.history.navigate(fragment, options);
+        };
+        Router.prototype._bindRoutes = function () {
+            if(!this.routes) {
+                return;
+            }
+            var routes = [];
+            for(var route in this.routes) {
+                routes.unshift([
+                    route, 
+                    this.routes[route]
+                ]);
+            }
+            for(var i = 0, l = routes.length; i < l; i++) {
+                this.route(routes[i][0], routes[i][1], this[routes[i][1]]);
+            }
+        };
+        Router.prototype._routeToRegExp = function (route) {
+            route = route.replace(Router.escapeRegExp, '\\$&').replace(Router.namedParam, '([^\/]+)').replace(Router.splatParam, '(.*?)');
+            return new RegExp('^' + route + '$');
+        };
+        Router.prototype._extractParameters = function (route, fragment) {
+            return route.exec(fragment).slice(1);
+        };
+        return Router;
+    })(Base);
+    Backbone.Router = Router;    
+    Backbone.history;
+    var History = (function (_super) {
+        __extends(History, _super);
+        function History() {
+                _super.call(this);
+            this.started = false;
+            this.interval = 50;
+            this.handlers = [];
+            Backbone._.bindAll(this, 'checkUrl');
+        }
+        History.routeStripper = /^[#\/]/;
+        History.isExplorer = /msie [\w.]+/;
+        History.prototype.getHash = function (windowOverride) {
+            var loc = windowOverride ? windowOverride.location : window.location;
+            var match = loc.href.match(/#(.*)$/);
+            return match ? match[1] : '';
+        };
+        History.prototype.getFragment = function (fragment, forcePushState) {
+            if(fragment == null) {
+                if(this._hasPushState || forcePushState) {
+                    fragment = window.location.pathname;
+                    var search = window.location.search;
+                    if(search) {
+                        fragment += search;
+                    }
+                } else {
+                    fragment = this.getHash();
+                }
+            }
+            if(!fragment.indexOf(this.options.root)) {
+                fragment = fragment.substr(this.options.root.length);
+            }
+            return fragment.replace(routeStripper, '');
+        };
+        return History;
+    })(Base);
+    Backbone.History = History;    
 })(exports.Backbone || (exports.Backbone = {}));
 
 
