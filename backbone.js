@@ -8,14 +8,19 @@ var __extends = this.__extends || function (d, b) {
     Backbone.splice = Array.prototype.splice;
     Backbone.VERSION = "0.9.2";
     Backbone.root = window;
-    Backbone.$ = jQuery;
-    Backbone._ = underscore;
+    Backbone.$ = (Backbone.root).jQuery || (Backbone.root).Zepto || (Backbone.root).ender;
+    Backbone._ = (Backbone.root)._;
     function setDomLibrary(lib) {
         Backbone.$ = lib;
     }
+    Backbone.previousBackbone = (Backbone.root).Backbone;
+    function noConflict() {
+        (Backbone.root).Backbone = Backbone.previousBackbone;
+        return this;
+    }
+    ; ;
     Backbone.emulateHTTP = false;
     Backbone.emulateJSON = false;
-    Backbone.eventSplitter = /\s+/;
     function extend(protoProps, classProps) {
         var child = inherits(this, protoProps, classProps);
         child.extend = this.extend;
@@ -116,12 +121,15 @@ var __extends = this.__extends || function (d, b) {
         }
     }
     ; ;
-    var Base = (function () {
-        function Base() {
+    Backbone.eventSplitter = /\s+/;
+    var Events = (function () {
+        function Events() {
             this._callbacks = undefined;
+            this.bind = Events.prototype.on;
+            this.unbind = Events.prototype.off;
             this.extend = Backbone.extend;
         }
-        Base.prototype.on = function (events, callback, context) {
+        Events.prototype.on = function (events, callback, context) {
             var eventsList;
             var calls;
             var event;
@@ -150,7 +158,7 @@ var __extends = this.__extends || function (d, b) {
             }
             return this;
         };
-        Base.prototype.off = function (events, callback, context) {
+        Events.prototype.off = function (events, callback, context) {
             var eventsList;
             var event;
             var calls;
@@ -184,7 +192,7 @@ var __extends = this.__extends || function (d, b) {
             }
             return this;
         };
-        Base.prototype.trigger = function (events) {
+        Events.prototype.trigger = function (events) {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
                 args[_i] = arguments[_i + 1];
@@ -223,8 +231,9 @@ var __extends = this.__extends || function (d, b) {
             }
             return this;
         };
-        return Base;
-    })();    
+        return Events;
+    })();
+    Backbone.Events = Events;    
     var Model = (function (_super) {
         __extends(Model, _super);
         function Model(attributes, options) {
@@ -564,7 +573,7 @@ var __extends = this.__extends || function (d, b) {
             if (typeof options === "undefined") { options = undefined; }
         };
         return Model;
-    })(Base);
+    })(Events);
     Backbone.Model = Model;    
     var Collection = (function (_super) {
         __extends(Collection, _super);
@@ -730,13 +739,13 @@ var __extends = this.__extends || function (d, b) {
         Collection.prototype.at = function (index) {
             return this.models[index];
         };
-        Collection.prototype.where = function (attrs) {
-            if(Backbone._.isEmpty(attrs)) {
+        Collection.prototype.where = function (attributes) {
+            if(Backbone._.isEmpty(attributes)) {
                 return [];
             }
             return this.filter(function (model) {
-                for(var key in attrs) {
-                    if(attrs[key] !== model.get(key)) {
+                for(var key in attributes) {
+                    if(attributes[key] !== model.get(key)) {
                         return false;
                     }
                 }
@@ -969,7 +978,7 @@ var __extends = this.__extends || function (d, b) {
             return Backbone._.isEmpty(this.models);
         };
         return Collection;
-    })(Base);
+    })(Events);
     Backbone.Collection = Collection;    
     var Router = (function (_super) {
         __extends(Router, _super);
@@ -1029,7 +1038,7 @@ var __extends = this.__extends || function (d, b) {
             return route.exec(fragment).slice(1);
         };
         return Router;
-    })(Base);
+    })(Events);
     Backbone.Router = Router;    
     Backbone.history;
     var History = (function (_super) {
@@ -1197,7 +1206,7 @@ var __extends = this.__extends || function (d, b) {
             }
         };
         return History;
-    })(Base);
+    })(Events);
     Backbone.History = History;    
     var View = (function (_super) {
         __extends(View, _super);
@@ -1313,7 +1322,7 @@ var __extends = this.__extends || function (d, b) {
             }
         };
         return View;
-    })(Base);
+    })(Events);
     Backbone.View = View;    
 })(exports.Backbone || (exports.Backbone = {}));
 
