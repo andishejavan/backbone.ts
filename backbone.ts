@@ -232,7 +232,7 @@ export module Backbone {
 	//     ... function passing Foo type but using EventHandler interface
 	//     callback(foo: EventHandler) ...
 	//
-	export interface EventHandler {
+	export interface IEventHandler {
 		on(events: string, callback: (...args: any[]) => any, context?: any): any;
 		off(events?: string, callback?: (...args: any[]) => any, context?: any): any;
 		trigger(events: string, ...args: any[]): any;
@@ -243,7 +243,7 @@ export module Backbone {
 
 	// Events class that all Backbone.ts classes extend.
 	// Implements the EventHandler interface.
-	export class Events implements Backbone.EventHandler {
+	export class Events implements Backbone.IEventHandler {
 
 		// Internal reference to all event callbacks.
 		private _callbacks = undefined;
