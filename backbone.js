@@ -1039,6 +1039,10 @@ var __extends = this.__extends || function (d, b) {
             this.started = false;
             this.interval = 50;
             this.handlers = [];
+            this._wantsHashChange = false;
+            this._wantsPushState = false;
+            this._hasPushState = false;
+            this.extend = Backbone.extend;
             Backbone._.bindAll(this, 'checkUrl');
         }
         History.routeStripper = /^[#\/]/;
@@ -1063,11 +1067,254 @@ var __extends = this.__extends || function (d, b) {
             if(!fragment.indexOf(this.options.root)) {
                 fragment = fragment.substr(this.options.root.length);
             }
-            return fragment.replace(routeStripper, '');
+            return fragment.replace(History.routeStripper, '');
+        };
+        History.prototype.start = function (options) {
+            if(this.started) {
+                throw new Error("Backbone.history has already been started");
+            }
+            this.started = true;
+            this.options = Backbone._.extend({
+            }, {
+                root: '/'
+            }, this.options, options);
+            this._wantsHashChange = this.options.hashChange !== false;
+            this._wantsPushState = !!this.options.pushState;
+            this._hasPushState = !!(this.options.pushState && window.history && window.history.pushState);
+            var fragment = this.getFragment();
+            var docMode = document.documentMode;
+            var oldIE = (History.isExplorer.exec(navigator.userAgent.toLowerCase()) && (!docMode || docMode <= 7));
+            if(oldIE) {
+                this.iframe = Backbone.$('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0].contentWindow;
+                this.navigate(fragment);
+            }
+            if(this._hasPushState) {
+                Backbone.$(window).bind('popstate', this.checkUrl);
+            } else {
+                if(this._wantsHashChange && ('onhashchange' in window) && !oldIE) {
+                    Backbone.$(window).bind('hashchange', this.checkUrl);
+                } else {
+                    if(this._wantsHashChange) {
+                        this._checkUrlInterval = setInterval(this.checkUrl, this.interval);
+                    }
+                }
+            }
+            this.fragment = fragment;
+            var loc = window.location;
+            var atRoot = loc.pathname == this.options.root;
+            if(this._wantsHashChange && this._wantsPushState && !this._hasPushState && !atRoot) {
+                this.fragment = this.getFragment(null, true);
+                window.location.replace(this.options.root + '#' + this.fragment);
+                return true;
+            } else {
+                if(this._wantsPushState && this._hasPushState && atRoot && loc.hash) {
+                    this.fragment = this.getHash().replace(History.routeStripper, '');
+                    window.history.replaceState({
+                    }, document.title, loc.protocol + '//' + loc.host + this.options.root + this.fragment);
+                }
+            }
+            if(!this.options.silent) {
+                return this.loadUrl();
+            }
+        };
+        History.prototype.stop = function () {
+            Backbone.$(window).unbind('popstate', this.checkUrl).unbind('hashchange', this.checkUrl);
+            clearInterval(this._checkUrlInterval);
+            this.started = false;
+        };
+        History.prototype.route = function (route, callback) {
+            this.handlers.unshift({
+                route: route,
+                callback: callback
+            });
+        };
+        History.prototype.checkUrl = function (e) {
+            var current = this.getFragment();
+            if(current == this.fragment && this.iframe) {
+                current = this.getFragment(this.getHash(this.iframe));
+            }
+            if(current == this.fragment) {
+                return false;
+            }
+            if(this.iframe) {
+                this.navigate(current);
+            }
+            this.loadUrl() || this.loadUrl(this.getHash());
+        };
+        History.prototype.loadUrl = function (fragmentOverride) {
+            var fragment = this.fragment = this.getFragment(fragmentOverride);
+            var matched = Backbone._.any(this.handlers, function (handler) {
+                if(handler.route.test(fragment)) {
+                    handler.callback(fragment);
+                    return true;
+                }
+            });
+            return matched;
+        };
+        History.prototype.navigate = function (fragment, options) {
+            if(!this.started) {
+                return false;
+            }
+            if(!options || options === true) {
+                options = {
+                    trigger: options
+                };
+            }
+            var frag = (fragment || '').replace(History.routeStripper, '');
+            if(this.fragment == frag) {
+                return;
+            }
+            if(this._hasPushState) {
+                if(frag.indexOf(this.options.root) != 0) {
+                    frag = this.options.root + frag;
+                }
+                this.fragment = frag;
+                window.history[options.replace ? 'replaceState' : 'pushState']({
+                }, document.title, frag);
+            } else {
+                if(this._wantsHashChange) {
+                    this.fragment = frag;
+                    this._updateHash(window.location, frag, options.replace);
+                    if(this.iframe && (frag != this.getFragment(this.getHash(this.iframe)))) {
+                        if(!options.replace) {
+                            this.iframe.document.open().close();
+                        }
+                        this._updateHash(this.iframe.location, frag, options.replace);
+                    }
+                } else {
+                    window.location.assign(this.options.root + fragment);
+                }
+            }
+            if(options.trigger) {
+                this.loadUrl(fragment);
+            }
+        };
+        History.prototype._updateHash = function (location, fragment, replace) {
+            if(replace) {
+                location.replace(location.toString().replace(/(javascript:|#).*$/, '') + '#' + fragment);
+            } else {
+                location.hash = fragment;
+            }
         };
         return History;
     })(Base);
     Backbone.History = History;    
+    var View = (function (_super) {
+        __extends(View, _super);
+        function View(options) {
+                _super.call(this);
+            this.el = undefined;
+            this.$el = undefined;
+            this.tagName = 'div';
+            this.options = undefined;
+            this.extend = Backbone.extend;
+            this.cid = Backbone._.uniqueId('view');
+            this._configure(options || {
+            });
+            this._ensureElement();
+            this.delegateEvents();
+        }
+        View.delegateEventSplitter = /^(\S+)\s*(.*)$/;
+        View.viewOptions = [
+            'model', 
+            'collection', 
+            'el', 
+            'id', 
+            'attributes', 
+            'className', 
+            'tagName'
+        ];
+        View.prototype.$ = function (selector) {
+            return this.$el.find(selector);
+        };
+        View.prototype.render = function () {
+            return this;
+        };
+        View.prototype.remove = function () {
+            this.$el.remove();
+            return this;
+        };
+        View.prototype.make = function (tagName, attributes, content) {
+            var el = document.createElement(tagName);
+            if(attributes) {
+                Backbone.$(el).attr(attributes);
+            }
+            if(content) {
+                Backbone.$(el).html(content);
+            }
+            return el;
+        };
+        View.prototype.setElement = function (element, delegate) {
+            if(this.$el) {
+                this.undelegateEvents();
+            }
+            this.$el = (element instanceof Backbone.$) ? element : Backbone.$(element);
+            this.el = this.$el[0];
+            if(delegate !== false) {
+                this.delegateEvents();
+            }
+            return this;
+        };
+        View.prototype.delegateEvents = function (events) {
+            if(!(events || (events = getValue(this, 'events')))) {
+                return;
+            }
+            this.undelegateEvents();
+            for(var key in events) {
+                var method = events[key];
+                if(!Backbone._.isFunction(method)) {
+                    method = this[events[key]];
+                }
+                if(!method) {
+                    throw new Error('Method "' + events[key] + '" does not exist');
+                }
+                var match = key.match(View.delegateEventSplitter);
+                var eventName = match[1];
+                var selector = match[2];
+
+                method = Backbone._.bind(method, this);
+                eventName += '.delegateEvents' + this.cid;
+                if(selector === '') {
+                    this.$el.bind(eventName, method);
+                } else {
+                    this.$el.delegate(selector, eventName, method);
+                }
+            }
+        };
+        View.prototype.undelegateEvents = function () {
+            this.$el.unbind('.delegateEvents' + this.cid);
+        };
+        View.prototype._configure = function (options) {
+            if(this.options) {
+                options = Backbone._.extend({
+                }, this.options, options);
+            }
+            for(var i = 0, l = View.viewOptions.length; i < l; i++) {
+                var attr = View.viewOptions[i];
+                if(options[attr]) {
+                    this[attr] = options[attr];
+                }
+            }
+            this.options = options;
+        };
+        View.prototype._ensureElement = function () {
+            if(!this.el) {
+                var attrs = getValue(this, 'attributes') || {
+                };
+                if(this.id) {
+                    attrs.id = this.id;
+                }
+                if(this.className) {
+                    attrs['class'] = this.className;
+                }
+                this.setElement(this.make(this.tagName, attrs), false);
+            } else {
+                this.setElement(this.el, false);
+            }
+        };
+        return View;
+    })(Base);
+    Backbone.View = View;    
 })(exports.Backbone || (exports.Backbone = {}));
 
 
