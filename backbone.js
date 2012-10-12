@@ -933,12 +933,8 @@ var __extends = this.__extends || function (d, b) {
         Collection.prototype.groupBy = function (iterator) {
             return Backbone._.groupBy(this.models, iterator);
         };
-        Collection.prototype.sortedIndex = function () {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                args[_i] = arguments[_i + 0];
-            }
-            throw new Error("Not implemented exception.");
+        Collection.prototype.sortedIndex = function (model, iterator) {
+            return Backbone._.sortedIndex(this.models, model, iterator);
         };
         Collection.prototype.toArray = function () {
             return Backbone._.toArray(this.models);
