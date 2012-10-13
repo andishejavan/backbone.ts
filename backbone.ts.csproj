@@ -20,6 +20,14 @@
     <UpgradeBackupLocation />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="jQuery.d.js">
+      <DependentUpon>jQuery.d.ts</DependentUpon>
+    </Content>
+    <Content Include="underscore.d.js">
+      <DependentUpon>underscore.d.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="underscore.d.ts" />
+    <TypeScriptCompile Include="jQuery.d.ts" />
     <TypeScriptCompile Include="backbone.ts" />
     <Content Include="backbone.js">
       <DependentUpon>backbone.ts</DependentUpon>

@@ -1,3 +1,5 @@
+/// <reference path="jQuery.d.ts" />
+/// <reference path="underscore.d.ts/ >
 
 //     Backbone.ts 0.9.2
 
@@ -8,7 +10,7 @@
 
 // The top-level namespace. All public Backbone classes and modules will
 // be attached to this. Exported for both CommonJS and the browser.
-export module Backbone {
+module Backbone {
 
 	// Initial Setup
 	// -------------
@@ -28,10 +30,10 @@ export module Backbone {
 	export var root: Window = window;
 
 	// For Backbone's purposes, jQuery, Zepto, or Ender owns the `$` variable.
-	export var $ = (<any>root).jQuery || (<any>root).Zepto || (<any>root).ender;
+	export var $ = jQuery;
 
 	// Require Underscore, if we're on the server, and it's not already present.
-	export var _ = (<any>root)._;
+	export var _ = _;
 
 	// Set the JavaScript library that will be used for DOM manipulation and
 	// Ajax calls (a.k.a. the `$` variable). By default Backbone will use: jQuery,
@@ -1385,7 +1387,8 @@ export module Backbone {
 			var oldIE = (History.isExplorer.exec(navigator.userAgent.toLowerCase()) && (!docMode || docMode <= 7));
 
 			if (oldIE) {
-				this.iframe = $('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0].contentWindow;
+				// Can't get this to typecheck, casting to <any>.
+				this.iframe = (<any>$('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0]).contentWindow;
 				this.navigate(fragment);
 			}
 
@@ -1526,6 +1529,33 @@ export module Backbone {
 	// Backbone.View
 	// -------------
 
+	export class ViewOptions {
+		public model: Model;
+		public collection: Collection;
+		public el: HTMLElement;
+		public id: string;
+		public className: string;
+		public tagName: string;
+		public attributes: any;
+
+		constructor (
+			model?: Model,
+			collection?: Collection,
+			el?: HTMLElement,
+			id?: string,
+			className?: string,
+			tagName?: string = 'div',
+			attributes?: any) {
+			this.model = model;
+			this.collection = collection;
+			this.el = el;
+			this.id = id;
+			this.className = className;
+			this.tagName = tagName;
+			this.attributes = attributes;
+		}
+	}
+
 	// Creating a Backbone.View creates its initial element outside of the DOM,
 	// if an existing element is not provided...
 	export class View extends Events {
@@ -1538,24 +1568,21 @@ export module Backbone {
 
 		public el: HTMLElement = undefined;
 
-		public $el: any = undefined;
+		public $el: JQuery = undefined;
 
 		// Cached regex to split keys for `delegate`.
 		public static delegateEventSplitter = /^(\S+)\s*(.*)$/;
 
-		// List of view options to be merged as properties.
-		public static viewOptions = ['model', 'collection', 'el', 'id', 'attributes', 'className', 'tagName'];
-
 		// The default `tagName` of a View's element is `"div"`.
 		public tagName: string = 'div';
 
-		public options: any = undefined;
+		public options: ViewOptions = undefined;
 
-		constructor(options?: any) {
+		constructor(options?: ViewOptions) {
 			super();
 
 			this.cid = _.uniqueId('view');
-			this._configure(options || {});
+			this._configure(options || new ViewOptions());
 			this._ensureElement();
 			//this.initialize.apply(this, arguments);
 			this.delegateEvents();
@@ -1598,10 +1625,10 @@ export module Backbone {
 
 		// Change the view's element (`this.el` property), including event
 		// re-delegation.
-		public setElement(element: HTMLElement, delegate: bool): View {
+		public setElement(element: HTMLElement, delegate?: bool): View {
 			if (this.$el) 
 				this.undelegateEvents();
-			this.$el = (element instanceof $) ? element : $(element);
+			this.$el = $(element);
 			this.el = this.$el[0];
 			if (delegate !== false) 
 				this.delegateEvents();
@@ -1653,15 +1680,20 @@ export module Backbone {
 			this.$el.unbind('.delegateEvents' + this.cid);
 		}
 
+		// List of view options to be merged as properties.
+		// legacy, but used in _configure()
+		public static viewOptions = ['model', 'collection', 'el', 'id', 'attributes', 'className', 'tagName'];
+
 		// Performs the initial configuration of a View with a set of options.
 		// Keys with special meaning *(model, collection, id, className)*, are
 		// attached directly to the view.
-		private _configure(options): void {
+		private _configure(options: ViewOptions): void {
 			if (this.options) 
 				options = _.extend({}, this.options, options);
 			for (var i = 0, l = View.viewOptions.length; i < l; i++) {
 				var attr = View.viewOptions[i];
-				if (options[attr]) this[attr] = options[attr];
+				if (options[attr]) 
+					this[attr] = options[attr];
 			}
 			this.options = options;
 		}

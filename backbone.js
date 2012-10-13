@@ -3,13 +3,14 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 }
+var Backbone;
 (function (Backbone) {
     Backbone.slice = Array.prototype.slice;
     Backbone.splice = Array.prototype.splice;
     Backbone.VERSION = "0.9.2";
     Backbone.root = window;
-    Backbone.$ = (Backbone.root).jQuery || (Backbone.root).Zepto || (Backbone.root).ender;
-    Backbone._ = (Backbone.root)._;
+    Backbone.$ = jQuery;
+    Backbone._ = Backbone._;
     function setDomLibrary(lib) {
         Backbone.$ = lib;
     }
@@ -1090,7 +1091,7 @@ var __extends = this.__extends || function (d, b) {
             var docMode = document.documentMode;
             var oldIE = (History.isExplorer.exec(navigator.userAgent.toLowerCase()) && (!docMode || docMode <= 7));
             if(oldIE) {
-                this.iframe = Backbone.$('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0].contentWindow;
+                this.iframe = (Backbone.$('<iframe src="javascript:0" tabindex="-1" />').hide().appendTo('body')[0]).contentWindow;
                 this.navigate(fragment);
             }
             if(this._hasPushState) {
@@ -1204,6 +1205,20 @@ var __extends = this.__extends || function (d, b) {
         return History;
     })(Events);
     Backbone.History = History;    
+    var ViewOptions = (function () {
+        function ViewOptions(model, collection, el, id, className, tagName, attributes) {
+            if (typeof tagName === "undefined") { tagName = 'div'; }
+            this.model = model;
+            this.collection = collection;
+            this.el = el;
+            this.id = id;
+            this.className = className;
+            this.tagName = tagName;
+            this.attributes = attributes;
+        }
+        return ViewOptions;
+    })();
+    Backbone.ViewOptions = ViewOptions;    
     var View = (function (_super) {
         __extends(View, _super);
         function View(options) {
@@ -1214,8 +1229,7 @@ var __extends = this.__extends || function (d, b) {
             this.options = undefined;
             this.extend = Backbone.extend;
             this.cid = Backbone._.uniqueId('view');
-            this._configure(options || {
-            });
+            this._configure(options || new ViewOptions());
             this._ensureElement();
             this.delegateEvents();
         }
@@ -1253,7 +1267,7 @@ var __extends = this.__extends || function (d, b) {
             if(this.$el) {
                 this.undelegateEvents();
             }
-            this.$el = (element instanceof Backbone.$) ? element : Backbone.$(element);
+            this.$el = Backbone.$(element);
             this.el = this.$el[0];
             if(delegate !== false) {
                 this.delegateEvents();
@@ -1320,6 +1334,5 @@ var __extends = this.__extends || function (d, b) {
         return View;
     })(Events);
     Backbone.View = View;    
-})(exports.Backbone || (exports.Backbone = {}));
-
+})(Backbone || (Backbone = {}));
 
