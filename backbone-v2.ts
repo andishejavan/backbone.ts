@@ -38,8 +38,9 @@ module Backbone {
 		* If the event already exists the callback function is added.
 		* event: The name of the event.
 		* fn: Callback function.
+		* context: The 'this' argument when triggering the event.
 		**/
-		on(event: string, fn: Function): void;
+		on(event: string, fn: Function, context?: any): void;
 
 		/**
 		* Turns off or removes a callback function from the event.
@@ -64,144 +65,183 @@ module Backbone {
 		clear(): void;
 	}
 
-	/**
-	* Internal module class to hold callback functions for an event.
-	**/
-	class EventCallbacks {
+	///**
+	//* Internal module class to hold callback functions for an event.
+	//**/
+	//class EventCallbacks {
 
-		/**
-		* The owner object of the event, used as 'this' when applying
-		* the callback.
-		*
-		* note: i think this is redundant, the Event class can pass this in
-		*       as an argument everytime an event is triggered?
-		*       also since it is bound to the $el or delegated i think
-		*       the context is always set?
-		**/
-		//public context: any;
+	//	/**
+	//	* The owner object of the event, used as 'this' when applying
+	//	* the callback.
+	//	*
+	//	* note: i think this is redundant, the Event class can pass this in
+	//	*       as an argument everytime an event is triggered?
+	//	*       also since it is bound to the $el or delegated i think
+	//	*       the context is always set?
+	//	**/
+	//	//public context: any;
 
-		/**
-		* The name of the event.
-		*
-		* note: i think this is redundant, remove? might be usedful for reverse lookup
-		**/
-		public event: string;
+	//	/**
+	//	* The name of the event.
+	//	*
+	//	* note: i think this is redundant, remove? might be usedful for reverse lookup
+	//	**/
+	//	public event: string;
 
-		/**
-		* The list of callback functions linked to the event.
-		**/
-		public fns: Function[];
+	//	/**
+	//	* The list of callback functions linked to the event.
+	//	**/
+	//	public fns: Function[];
 
-		/**
-		* EventFuncs constructor.
-		* event: The name of the event.
-		* fns: An initial array of callback functions to add.
-		**/
-		constructor (event: string, fns?: Function[]) {
-			this.event = event;
-			this.fns = (fns || new Function[0]);
-		}
+	//	/**
+	//	* EventFuncs constructor.
+	//	* event: The name of the event.
+	//	* fns: An initial array of callback functions to add.
+	//	**/
+	//	constructor (event: string, fns?: Function[]) {
+	//		this.event = event;
+	//		this.fns = (fns || new Function[0]);
+	//	}
 
-		/**
-		* Adds a callback function to the event.
-		* If the function has already been added it is not added again.
-		* fn: The callback function to add to the event.
-		* return: true if the callback is added, otherwise false.
-		**/
-		public add(fn: Function): bool {
+	//	/**
+	//	* Adds a callback function to the event.
+	//	* If the function has already been added it is not added again.
+	//	* fn: The callback function to add to the event.
+	//	* return: true if the callback is added, otherwise false.
+	//	**/
+	//	public add(fn: Function): bool {
 
-			// Do not add duplicate functions.
-			if (this.fns.indexOf(fn) !== -1)
-				return false;
+	//		// Do not add duplicate functions.
+	//		if (this.fns.indexOf(fn) !== -1)
+	//			return false;
 
-			this.fns.push(fn);
-			return true;
-		}
+	//		this.fns.push(fn);
+	//		return true;
+	//	}
 
-		/**
-		* Removes a callback function from the event.
-		* fn: The callback function to remove from the event.
-		* return: true if the callback is removed, otherwise false.
-		**/
-		public remove(fn: Function): bool {
+	//	/**
+	//	* Removes a callback function from the event.
+	//	* fn: The callback function to remove from the event.
+	//	* return: true if the callback is removed, otherwise false.
+	//	**/
+	//	public remove(fn: Function): bool {
 
-			var index = this.fns.indexOf(fn);
-			if (index == -1)
-				return false;
+	//		var index = this.fns.indexOf(fn);
+	//		if (index == -1)
+	//			return false;
 
-			this.fns.splice(index, 1);
+	//		this.fns.splice(index, 1);
 
-			return true;
-		}
+	//		return true;
+	//	}
 
-		/**
-		* Triggers all callback functions with the supplied arguments.
-		* Goes through each callback function in the order they were
-		* added (linear array).
-		**/
-		public trigger(context: any, ...args: any[]): void {
+	//	/**
+	//	* Triggers all callback functions with the supplied arguments.
+	//	* Goes through each callback function in the order they were
+	//	* added (linear array).
+	//	**/
+	//	public trigger(context: any, ...args: any[]): void {
 
-			// trigger  all functions bound to this event.
-			for (var i = 0; i < this.fns.length; i++) {
-				this.fns[i].apply(context, args);
-			}
-		}
+	//		// trigger  all functions bound to this event.
+	//		for (var i = 0; i < this.fns.length; i++) {
+	//			this.fns[i].apply(context, args);
+	//		}
+	//	}
 
-		/**
-		* Clears all callback functions.
-		**/
-		clear(): void {
-			this.fns = Function[0];
-		}
-	}
+	//	/**
+	//	* Clears all callback functions.
+	//	**/
+	//	clear(): void {
+	//		this.fns = Function[0];
+	//	}
+	//}
 
 	export class Events implements IEventHandler {
 
 		// Dictionary of events and their callback functions.
-		private eventCallbacks: {
-			[event: string]: EventCallbacks;
+		//private eventCallbacks: {
+		//	[event: string]: EventCallbacks;
+		//};
+
+		private _callbacks: {
+			[event: string]: {
+				[id: string]: Function;
+				context: string;
+			};
 		};
 
 		constructor () {
 
 		}
 
-		public on(event: string, fn: Function): void {
+		public on(event: string, fn: Function, context?: any): void {
 
-			if (this.eventCallbacks[event] === undefined) {
-				this.eventCallbacks[event] = new EventCallbacks(event);
+			if (this._callbacks[event] === undefined) {
+				this._callbacks[event] = <any>{};	// don't know how to declare properly
+													// set to empty object literal
 			}
+
+			this._callbacks[event][fn.toString()] = fn;
+			this._callbacks[event].context = context;
+
+			//if (this.eventCallbacks[event] === undefined) {
+			//	this.eventCallbacks[event] = new EventCallbacks(event);
+			//}
 			
-			this.eventCallbacks[event].add(fn);
+			//this.eventCallbacks[event].add(fn);
 		}
 		
 		
 		public off(event: string, fn?: Function): void {
 		
-			if (!(this.eventCallbacks[event] === undefined)) {
-				if (fn === undefined) {
-					this.eventCallbacks[event].clear();
-					delete this.eventCallbacks[event];
-				}
-				else {
-					this.eventCallbacks[event].remove(fn);
+			if (this._callbacks[event] !== undefined) {
+				if (fn !== undefined) {
+					delete this._callbacks[event][fn.toString()];
+
+					// Remove event callback entirely if it is empty
+					if ($.isEmptyObject(this._callbacks[event])) {
+						delete this._callbacks[event];
+					}
+				} else {
+					// Remove all events.
+					delete this._callbacks[event];
 				}
 			}
+
+			//if (!(this.eventCallbacks[event] === undefined)) {
+			//	if (fn === undefined) {
+			//		this.eventCallbacks[event].clear();
+			//		delete this.eventCallbacks[event];
+			//	}
+			//	else {
+			//		this.eventCallbacks[event].remove(fn);
+			//	}
+			//}
 		}
 
 		public trigger(event: string, ...args: any[]): void {
 
-			if (!(this.eventCallbacks[event] === undefined)) {
-				this.eventCallbacks[event].trigger(args);
+			if (this._callbacks[event] !== undefined) {
+				for (var fn in this._callbacks[event]) {
+					this._callbacks[event][fn].apply(
+						this._callbacks[event].context,
+						args);
+				}
 			}
+
+			//if (!(this.eventCallbacks[event] === undefined)) {
+			//	this.eventCallbacks[event].trigger(args);
+			//}
 		}
 
 		public clear(): void {
-			// Dictionary, use for..in rather than for loop
-			for (var event in this.eventCallbacks) {
-				this.eventCallbacks[event].clear();
-				delete this.eventCallbacks[event];
-			}
+			this._callbacks = {};
+			
+			//// Dictionary, use for..in rather than for loop
+			//for (var event in this.eventCallbacks) {
+			//	this.eventCallbacks[event].clear();
+			//	delete this.eventCallbacks[event];
+			//}
 		}
 	}
 

@@ -9,56 +9,26 @@ var Backbone;
     Backbone.root = window;
     Backbone.$ = jQuery;
     Backbone._ = underscore;
-    var EventCallbacks = (function () {
-        function EventCallbacks(event, fns) {
-            this.event = event;
-            this.fns = (fns || new Function[0]());
-        }
-        EventCallbacks.prototype.add = function (fn) {
-            if(this.fns.indexOf(fn) !== -1) {
-                return false;
-            }
-            this.fns.push(fn);
-            return true;
-        };
-        EventCallbacks.prototype.remove = function (fn) {
-            var index = this.fns.indexOf(fn);
-            if(index == -1) {
-                return false;
-            }
-            this.fns.splice(index, 1);
-            return true;
-        };
-        EventCallbacks.prototype.trigger = function (context) {
-            var args = [];
-            for (var _i = 0; _i < (arguments.length - 1); _i++) {
-                args[_i] = arguments[_i + 1];
-            }
-            for(var i = 0; i < this.fns.length; i++) {
-                this.fns[i].apply(context, args);
-            }
-        };
-        EventCallbacks.prototype.clear = function () {
-            this.fns = Function[0];
-        };
-        return EventCallbacks;
-    })();    
     var Events = (function () {
         function Events() {
         }
-        Events.prototype.on = function (event, fn) {
-            if(this.eventCallbacks[event] === undefined) {
-                this.eventCallbacks[event] = new EventCallbacks(event);
+        Events.prototype.on = function (event, fn, context) {
+            if(this._callbacks[event] === undefined) {
+                this._callbacks[event] = {
+                };
             }
-            this.eventCallbacks[event].add(fn);
+            this._callbacks[event][fn.toString()] = fn;
+            this._callbacks[event].context = context;
         };
         Events.prototype.off = function (event, fn) {
-            if(!(this.eventCallbacks[event] === undefined)) {
-                if(fn === undefined) {
-                    this.eventCallbacks[event].clear();
-                    delete this.eventCallbacks[event];
+            if(this._callbacks[event] !== undefined) {
+                if(fn !== undefined) {
+                    delete this._callbacks[event][fn.toString()];
+                    if(Backbone.$.isEmptyObject(this._callbacks[event])) {
+                        delete this._callbacks[event];
+                    }
                 } else {
-                    this.eventCallbacks[event].remove(fn);
+                    delete this._callbacks[event];
                 }
             }
         };
@@ -67,15 +37,15 @@ var Backbone;
             for (var _i = 0; _i < (arguments.length - 1); _i++) {
                 args[_i] = arguments[_i + 1];
             }
-            if(!(this.eventCallbacks[event] === undefined)) {
-                this.eventCallbacks[event].trigger(args);
+            if(this._callbacks[event] !== undefined) {
+                for(var fn in this._callbacks[event]) {
+                    this._callbacks[event][fn].apply(this._callbacks[event].context, args);
+                }
             }
         };
         Events.prototype.clear = function () {
-            for(var event in this.eventCallbacks) {
-                this.eventCallbacks[event].clear();
-                delete this.eventCallbacks[event];
-            }
+            this._callbacks = {
+            };
         };
         return Events;
     })();
