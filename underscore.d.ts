@@ -153,7 +153,7 @@ interface underscore {
   identity(x:any):any;
   times(n:number, f:Function):void;
   mixin(obj:any):void;
-  uniqueId(prefix:string[]): string;
+  uniqueId(prefix:string): string;
   escape(str:string): string;
   result(obj:any, key:string): any;
   template(template:string, bindings:any): string;
@@ -163,4 +163,5 @@ interface underscore {
   //value is useless
 }
 
+declare var underscore: underscore;
 declare var _: underscore;

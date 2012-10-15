@@ -1205,44 +1205,24 @@ var Backbone;
         return History;
     })(Events);
     Backbone.History = History;    
-    var ViewOptions = (function () {
-        function ViewOptions(model, collection, el, id, className, tagName, attributes) {
-            if (typeof tagName === "undefined") { tagName = 'div'; }
-            this.model = model;
-            this.collection = collection;
-            this.el = el;
-            this.id = id;
-            this.className = className;
-            this.tagName = tagName;
-            this.attributes = attributes;
-        }
-        return ViewOptions;
-    })();
-    Backbone.ViewOptions = ViewOptions;    
     var View = (function (_super) {
         __extends(View, _super);
-        function View(options) {
+        function View(model, el, id, className, tagName, collection, attributes) {
                 _super.call(this);
             this.el = undefined;
             this.$el = undefined;
             this.tagName = 'div';
-            this.options = undefined;
-            this.extend = Backbone.extend;
             this.cid = Backbone._.uniqueId('view');
-            this._configure(options || new ViewOptions());
+            this.model = model;
+            this.setElement(el, true);
+            this.className = className;
+            this.tagName = tagName;
+            this.collection = collection;
+            this.attributes = attributes;
             this._ensureElement();
             this.delegateEvents();
         }
         View.delegateEventSplitter = /^(\S+)\s*(.*)$/;
-        View.viewOptions = [
-            'model', 
-            'collection', 
-            'el', 
-            'id', 
-            'attributes', 
-            'className', 
-            'tagName'
-        ];
         View.prototype.$ = function (selector) {
             return this.$el.find(selector);
         };
@@ -1303,19 +1283,6 @@ var Backbone;
         View.prototype.undelegateEvents = function () {
             this.$el.unbind('.delegateEvents' + this.cid);
         };
-        View.prototype._configure = function (options) {
-            if(this.options) {
-                options = Backbone._.extend({
-                }, this.options, options);
-            }
-            for(var i = 0, l = View.viewOptions.length; i < l; i++) {
-                var attr = View.viewOptions[i];
-                if(options[attr]) {
-                    this[attr] = options[attr];
-                }
-            }
-            this.options = options;
-        };
         View.prototype._ensureElement = function () {
             if(!this.el) {
                 var attrs = getValue(this, 'attributes') || {
@@ -1334,5 +1301,15 @@ var Backbone;
         return View;
     })(Events);
     Backbone.View = View;    
+    var Foo = (function (_super) {
+        __extends(Foo, _super);
+        function Foo() {
+                _super.call(this, undefined, document.createElement('div'), 'foo', 'foo', 'div', undefined, undefined);
+            _super.prototype.on.call(this, 'click', this.onClick, this);
+        }
+        Foo.prototype.onClick = function () {
+        };
+        return Foo;
+    })(View);    
 })(Backbone || (Backbone = {}));
 
