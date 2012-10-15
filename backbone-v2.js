@@ -11,19 +11,33 @@ var Backbone;
     Backbone._ = (Backbone.root)._;
     var Events = (function () {
         function Events() {
+            this.clear();
         }
         Events.prototype.on = function (event, fn, context) {
+            var id = Backbone._.uniqueId("callback_");
             if(this._callbacks[event] === undefined) {
+                console.log("Events.on() creating event " + event);
                 this._callbacks[event] = {
                 };
             }
-            this._callbacks[event][fn.toString()] = fn;
-            this._callbacks[event].context = (context || Backbone.root);
+            if(this._callbacks[event][id] === undefined) {
+                this._callbacks[event][id] = {
+                    fn: fn,
+                    context: (context || this)
+                };
+            } else {
+                this._callbacks[event][id].fn = fn;
+                this._callbacks[event][id].context = (context || this);
+            }
         };
         Events.prototype.off = function (event, fn) {
             if(this._callbacks[event] !== undefined) {
                 if(fn !== undefined) {
-                    delete this._callbacks[event][fn.toString()];
+                    for(var id in this._callbacks[event]) {
+                        if(fn === this._callbacks[event][id].fn) {
+                            delete this._callbacks[event][id];
+                        }
+                    }
                     if(Backbone.$.isEmptyObject(this._callbacks[event])) {
                         delete this._callbacks[event];
                     }
@@ -38,8 +52,8 @@ var Backbone;
                 args[_i] = arguments[_i + 1];
             }
             if(this._callbacks[event] !== undefined) {
-                for(var fn in this._callbacks[event]) {
-                    this._callbacks[event][fn].apply(this._callbacks[event].context, args);
+                for(var key in this._callbacks[event]) {
+                    this._callbacks[event][key].fn.apply(this._callbacks[event][key].context, args);
                 }
             }
         };
@@ -62,10 +76,13 @@ var Backbone;
     Backbone.Event = Event;    
     var View = (function (_super) {
         __extends(View, _super);
-        function View(el, events) {
+        function View(id, el, model, events) {
+            if (typeof model === "undefined") { model = undefined; }
             if (typeof events === "undefined") { events = new Array(); }
                 _super.call(this);
+            this.id = id;
             this.cid = Backbone._.uniqueId('view_');
+            this.model = model;
             this.domEvents = {
             };
             for(var i = 0; i < events.length; i++) {
@@ -122,9 +139,22 @@ var Backbone;
     Backbone.View = View;    
     var Model = (function (_super) {
         __extends(Model, _super);
-        function Model() {
+        function Model(attributes) {
+            if (typeof attributes === "undefined") { attributes = {
+            }; }
                 _super.call(this);
+            this.changed = null;
+            this._silent = null;
+            this._pending = null;
+            this.idAttribute = 'id';
+            this.attributes = attributes;
         }
+        Model.prototype.toJSON = function () {
+            return Backbone._.clone(this.attributes);
+        };
+        Model.prototype.get = function (attr) {
+            return this.attributes[attr];
+        };
         return Model;
     })(Events);
     Backbone.Model = Model;    

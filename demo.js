@@ -8,17 +8,25 @@ var Application = (function () {
         var button = document.createElement("button");
         var button2 = document.createElement("button");
         $("#content").append(button, button2);
-        var fooBtn = new Foo(button);
+        var fooBtn = new Foo("btn1", button);
         fooBtn.render();
-        var fooBtn2 = new Foo(button2);
+        var fooBtn2 = new Foo("btn2", button2);
         fooBtn2.render();
+        fooBtn.on("test", Foo.prototype.onClick);
+        fooBtn.on("test", Foo.prototype.onClick);
+        fooBtn.on("test", Foo.prototype.onClick);
+        fooBtn.on("test", Foo.prototype.mouseOver);
+        fooBtn.trigger("test");
+        fooBtn.off("test");
+        fooBtn.on("test", Foo.prototype.onClick);
+        fooBtn.trigger("test");
     }
     return Application;
 })();
 var Foo = (function (_super) {
     __extends(Foo, _super);
-    function Foo(el) {
-        _super.call(this, el, [
+    function Foo(id, el) {
+        _super.call(this, id, el, undefined, [
     new Backbone.Event(Foo.prototype.onClick, "click"), 
     new Backbone.Event(Foo.prototype.mouseOver, "mouseover"), 
     new Backbone.Event(Foo.prototype.mouseOut, "mouseout")
@@ -30,8 +38,8 @@ var Foo = (function (_super) {
         return this;
     };
     Foo.prototype.onClick = function (jq) {
-        console.log("clicked count = " + this.clickedCount++);
-        return $(jq.srcElement);
+        console.log("clicked count = " + ++this.clickedCount);
+        return undefined;
     };
     Foo.prototype.mouseOver = function (jq) {
         console.log("mouseOver");

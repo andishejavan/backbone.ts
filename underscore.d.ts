@@ -112,8 +112,8 @@ interface underscore {
   has(obj:any, key:string): bool;
 
   //functions
-  bind(f:Function, obj:Object):void;
-  bind(f:Function, obj:Object, ...args:string[]):void;
+  bind(f:Function, obj:Object):Function;
+  bind(f:Function, obj:Object, ...args:string[]):Function;
   bindAll(obj:Object, ...methodNames:string[]):void;
   memoize(f:Function):any;
   memoize(f:Function, ...hashFunctions:any[]):any;
@@ -163,5 +163,4 @@ interface underscore {
   //value is useless
 }
 
-declare var underscore: underscore;
 declare var _: underscore;

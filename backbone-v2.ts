@@ -22,7 +22,7 @@ module Backbone {
 	export var $ = jQuery;
 
 	// Handle to underscore.
-	export var _ = (<any>root)._;
+	export var _: underscore = (<any>root)._;
 
 	/**
 	* IEventHandler
@@ -30,7 +30,7 @@ module Backbone {
 	* Can have multiple callbacks per event.
 	**/
 	interface IEventHandler {
-		
+
 		/**
 		* Turns on or adds a callback function to the event.
 		* If the event does not exist it is added and turned on with
@@ -38,8 +38,7 @@ module Backbone {
 		* If the event already exists the callback function is added.
 		* event: The name of the event.
 		* fn: Callback function.
-		* context: The 'this' argument when triggering the event, defaults to window
-		*          if no context is given.
+		* context: The 'this' argument when triggering the event, defaults to the callee.
 		**/
 		on(event: string, fn: Function, context?: any): void;
 
@@ -68,26 +67,45 @@ module Backbone {
 
 	export class Events implements IEventHandler {
 
+		/**
+		* Internal structure to hold all callbacks along with their context.
+		*
+		* Each event is keyed by name.
+		* Each event can have many callbacks, each keyed by an index.
+		* Each callback can have a different context, by default 'window' is used
+		* as the context if no context is provided.
+		*
+		* Dictionary<string, Event>:
+		*       Dictionary<string, Tuple<Function, context>>
+		**/
 		private _callbacks: {
-			[event: string]: {
-				[id: string]: Function;
-				context: string;
+			[event: string]: { 
+				[id: string]: {
+					fn: Function;
+					context: any;
+				};
 			};
 		};
 
 		constructor () {
-
+			this.clear();
 		}
 
 		public on(event: string, fn: Function, context?: any): void {
 
+			var id = Backbone._.uniqueId("callback_");
+			// Create the event holder.
 			if (this._callbacks[event] === undefined) {
-				this._callbacks[event] = <any>{};	// don't know how to declare properly
-													// set to empty object literal
+				console.log("Events.on() creating event " + event);
+				this._callbacks[event] = { };
 			}
 
-			this._callbacks[event][fn.toString()] = fn;
-			this._callbacks[event].context = (context || Backbone.root);
+			if (this._callbacks[event][id] === undefined) {
+				this._callbacks[event][id] = { fn: fn, context: (context || this) };
+			} else {
+				this._callbacks[event][id].fn = fn;
+				this._callbacks[event][id].context = (context || this);
+			}
 		}
 		
 		
@@ -95,7 +113,11 @@ module Backbone {
 		
 			if (this._callbacks[event] !== undefined) {
 				if (fn !== undefined) {
-					delete this._callbacks[event][fn.toString()];
+					for (var id in this._callbacks[event]) {
+						if (fn === this._callbacks[event][id].fn) {
+							delete this._callbacks[event][id];
+						}
+					}
 
 					// Remove event callback entirely if it is empty
 					if ($.isEmptyObject(this._callbacks[event])) {
@@ -111,9 +133,9 @@ module Backbone {
 		public trigger(event: string, ...args: any[]): void {
 
 			if (this._callbacks[event] !== undefined) {
-				for (var fn in this._callbacks[event]) {
-					this._callbacks[event][fn].apply(
-						this._callbacks[event].context,
+				for (var key in this._callbacks[event]) {
+					this._callbacks[event][key].fn.apply(
+						this._callbacks[event][key].context,
 						args);
 				}
 			}
@@ -135,15 +157,34 @@ module Backbone {
 
 	export class View extends Events {
 
-		public cid: string;
-
+		/**
+		* User defined id for the view.
+		**/
 		public id: string;
 
+		/**
+		* Backbone defined cid for the view.
+		* Format is "view_{number}".
+		**/
+		public cid: string;
+
+		/**
+		* The element, must be provided to the View.
+		* May or may not be attached to the DOM, must be manually attached.
+		**/
 		public el: HTMLElement;
 
+		/**
+		* jQuery reference to the element provided.
+		**/
 		public $el: JQuery;
 
-		public model: any; // todo implement Model
+		/**
+		* The instance of the model associated with this view.
+		* Can be undefined when using a Collection.
+		* Can be undefined when the view does not save or manipulate data.
+		**/
+		public model: Model;
 
 		public collection: any; // todo implement Collection
 
@@ -161,12 +202,16 @@ module Backbone {
 		};
 
 		constructor (
+			id: string,
 			el: HTMLElement, 
+			model?: Model = undefined,
 			events?: Event[] = new Event[]) {
 			
 			super();
 
+			this.id = id;
 			this.cid = _.uniqueId('view_');
+			this.model = model;
 			this.domEvents = {};
 			for (var i = 0; i < events.length; i++) {
 				this.domEvents[events[i].event] = events[i];
@@ -244,7 +289,7 @@ module Backbone {
 					this.$el.delegate(
 						this.domEvents[key].selector,
 						eventName,
-						func);
+						<any>func);
 				}
 				
 			}
@@ -257,8 +302,32 @@ module Backbone {
 
 	export class Model extends Events {
 
-		constructor () {
+		public changed = null;
+
+		private _silent = null;
+
+		private _pending = null;
+
+		public idAttribute = 'id';
+
+		private attributes: any;
+
+		constructor (
+			
+			attributes: any = {}) {
 			super();
+
+			this.attributes = attributes;
+		}
+
+		public toJSON(): any {
+			return _.clone(this.attributes);
+		}
+
+		// .. this is totally not typesafe, 
+		// but how to trigger change event when setting an object?
+		public get(attr) {
+			return this.attributes[attr];
 		}
 
 	}
