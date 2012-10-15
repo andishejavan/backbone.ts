@@ -22,7 +22,7 @@ module Backbone {
 	export var $ = jQuery;
 
 	// Handle to underscore.
-	export var _ = underscore;
+	export var _ = (<any>root)._;
 
 	/**
 	* IEventHandler
@@ -38,7 +38,8 @@ module Backbone {
 		* If the event already exists the callback function is added.
 		* event: The name of the event.
 		* fn: Callback function.
-		* context: The 'this' argument when triggering the event.
+		* context: The 'this' argument when triggering the event, defaults to window
+		*          if no context is given.
 		**/
 		on(event: string, fn: Function, context?: any): void;
 
@@ -65,103 +66,7 @@ module Backbone {
 		clear(): void;
 	}
 
-	///**
-	//* Internal module class to hold callback functions for an event.
-	//**/
-	//class EventCallbacks {
-
-	//	/**
-	//	* The owner object of the event, used as 'this' when applying
-	//	* the callback.
-	//	*
-	//	* note: i think this is redundant, the Event class can pass this in
-	//	*       as an argument everytime an event is triggered?
-	//	*       also since it is bound to the $el or delegated i think
-	//	*       the context is always set?
-	//	**/
-	//	//public context: any;
-
-	//	/**
-	//	* The name of the event.
-	//	*
-	//	* note: i think this is redundant, remove? might be usedful for reverse lookup
-	//	**/
-	//	public event: string;
-
-	//	/**
-	//	* The list of callback functions linked to the event.
-	//	**/
-	//	public fns: Function[];
-
-	//	/**
-	//	* EventFuncs constructor.
-	//	* event: The name of the event.
-	//	* fns: An initial array of callback functions to add.
-	//	**/
-	//	constructor (event: string, fns?: Function[]) {
-	//		this.event = event;
-	//		this.fns = (fns || new Function[0]);
-	//	}
-
-	//	/**
-	//	* Adds a callback function to the event.
-	//	* If the function has already been added it is not added again.
-	//	* fn: The callback function to add to the event.
-	//	* return: true if the callback is added, otherwise false.
-	//	**/
-	//	public add(fn: Function): bool {
-
-	//		// Do not add duplicate functions.
-	//		if (this.fns.indexOf(fn) !== -1)
-	//			return false;
-
-	//		this.fns.push(fn);
-	//		return true;
-	//	}
-
-	//	/**
-	//	* Removes a callback function from the event.
-	//	* fn: The callback function to remove from the event.
-	//	* return: true if the callback is removed, otherwise false.
-	//	**/
-	//	public remove(fn: Function): bool {
-
-	//		var index = this.fns.indexOf(fn);
-	//		if (index == -1)
-	//			return false;
-
-	//		this.fns.splice(index, 1);
-
-	//		return true;
-	//	}
-
-	//	/**
-	//	* Triggers all callback functions with the supplied arguments.
-	//	* Goes through each callback function in the order they were
-	//	* added (linear array).
-	//	**/
-	//	public trigger(context: any, ...args: any[]): void {
-
-	//		// trigger  all functions bound to this event.
-	//		for (var i = 0; i < this.fns.length; i++) {
-	//			this.fns[i].apply(context, args);
-	//		}
-	//	}
-
-	//	/**
-	//	* Clears all callback functions.
-	//	**/
-	//	clear(): void {
-	//		this.fns = Function[0];
-	//	}
-	//}
-
 	export class Events implements IEventHandler {
-
-		// Dictionary of events and their callback functions.
-		//private eventCallbacks: {
-		//	[event: string]: EventCallbacks;
-		//};
 
 		private _callbacks: {
 			[event: string]: {
@@ -182,13 +87,7 @@ module Backbone {
 			}
 
 			this._callbacks[event][fn.toString()] = fn;
-			this._callbacks[event].context = context;
-
-			//if (this.eventCallbacks[event] === undefined) {
-			//	this.eventCallbacks[event] = new EventCallbacks(event);
-			//}
-			
-			//this.eventCallbacks[event].add(fn);
+			this._callbacks[event].context = (context || Backbone.root);
 		}
 		
 		
@@ -207,16 +106,6 @@ module Backbone {
 					delete this._callbacks[event];
 				}
 			}
-
-			//if (!(this.eventCallbacks[event] === undefined)) {
-			//	if (fn === undefined) {
-			//		this.eventCallbacks[event].clear();
-			//		delete this.eventCallbacks[event];
-			//	}
-			//	else {
-			//		this.eventCallbacks[event].remove(fn);
-			//	}
-			//}
 		}
 
 		public trigger(event: string, ...args: any[]): void {
@@ -228,20 +117,10 @@ module Backbone {
 						args);
 				}
 			}
-
-			//if (!(this.eventCallbacks[event] === undefined)) {
-			//	this.eventCallbacks[event].trigger(args);
-			//}
 		}
 
 		public clear(): void {
 			this._callbacks = {};
-			
-			//// Dictionary, use for..in rather than for loop
-			//for (var event in this.eventCallbacks) {
-			//	this.eventCallbacks[event].clear();
-			//	delete this.eventCallbacks[event];
-			//}
 		}
 	}
 
@@ -277,7 +156,7 @@ module Backbone {
 		// redundant? force user to pass in element
 		public attributes: any;
 
-		public events: {
+		public domEvents: {
 			[event: string]: Event;
 		};
 
@@ -288,9 +167,9 @@ module Backbone {
 			super();
 
 			this.cid = _.uniqueId('view_');
-			this.events = {};
+			this.domEvents = {};
 			for (var i = 0; i < events.length; i++) {
-				this.events[events[i].event] = events[i];
+				this.domEvents[events[i].event] = events[i];
 			}
 
 			this.setElement(el, true);
@@ -347,26 +226,25 @@ module Backbone {
 		}
 
 		public delegateEvents(): void {
-			if(_.isEmpty(this.events))
+			if(_.isEmpty(this.domEvents))
 				return;
 
 			this.undelegateEvents();
-			for (var key in this.events) {
+			for (var key in this.domEvents) {
 				
 				// Bind the function to this View for context.
-				_.bind(this.events[key].fn, this);
+				var func = _.bind(this.domEvents[key].fn, this);
+				var eventName = this.domEvents[key].event + '.delegateEvents' + this.cid;
 
-				var eventName = this.events[key].event + '.delegateEvents' + this.cid;
-
-				if (this.events[key].selector === undefined) {
+				if (this.domEvents[key].selector === undefined) {
 					this.$el.on(
 						eventName,
-						this.events[key].fn);
+						func);
 				} else {
 					this.$el.delegate(
-						this.events[key].selector,
+						this.domEvents[key].selector,
 						eventName,
-						this.events[key].fn);
+						func);
 				}
 				
 			}
@@ -375,5 +253,13 @@ module Backbone {
 		public undelegateEvents() {
 			this.$el.off('.delegateEvents' + this.cid);
 		}
+	}
+
+	export class Model extends Events {
+
+		constructor () {
+			super();
+		}
+
 	}
 }

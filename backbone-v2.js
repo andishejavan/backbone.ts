@@ -8,7 +8,7 @@ var Backbone;
     Backbone.Version = "0.1";
     Backbone.root = window;
     Backbone.$ = jQuery;
-    Backbone._ = underscore;
+    Backbone._ = (Backbone.root)._;
     var Events = (function () {
         function Events() {
         }
@@ -18,7 +18,7 @@ var Backbone;
                 };
             }
             this._callbacks[event][fn.toString()] = fn;
-            this._callbacks[event].context = context;
+            this._callbacks[event].context = (context || Backbone.root);
         };
         Events.prototype.off = function (event, fn) {
             if(this._callbacks[event] !== undefined) {
@@ -66,10 +66,10 @@ var Backbone;
             if (typeof events === "undefined") { events = new Array(); }
                 _super.call(this);
             this.cid = Backbone._.uniqueId('view_');
-            this.events = {
+            this.domEvents = {
             };
             for(var i = 0; i < events.length; i++) {
-                this.events[events[i].event] = events[i];
+                this.domEvents[events[i].event] = events[i];
             }
             this.setElement(el, true);
         }
@@ -100,17 +100,17 @@ var Backbone;
             return this;
         };
         View.prototype.delegateEvents = function () {
-            if(Backbone._.isEmpty(this.events)) {
+            if(Backbone._.isEmpty(this.domEvents)) {
                 return;
             }
             this.undelegateEvents();
-            for(var key in this.events) {
-                Backbone._.bind(this.events[key].fn, this);
-                var eventName = this.events[key].event + '.delegateEvents' + this.cid;
-                if(this.events[key].selector === undefined) {
-                    this.$el.on(eventName, this.events[key].fn);
+            for(var key in this.domEvents) {
+                var func = Backbone._.bind(this.domEvents[key].fn, this);
+                var eventName = this.domEvents[key].event + '.delegateEvents' + this.cid;
+                if(this.domEvents[key].selector === undefined) {
+                    this.$el.on(eventName, func);
                 } else {
-                    this.$el.delegate(this.events[key].selector, eventName, this.events[key].fn);
+                    this.$el.delegate(this.domEvents[key].selector, eventName, func);
                 }
             }
         };
@@ -120,5 +120,13 @@ var Backbone;
         return View;
     })(Events);
     Backbone.View = View;    
+    var Model = (function (_super) {
+        __extends(Model, _super);
+        function Model() {
+                _super.call(this);
+        }
+        return Model;
+    })(Events);
+    Backbone.Model = Model;    
 })(Backbone || (Backbone = {}));
 
