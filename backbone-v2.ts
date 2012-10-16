@@ -24,6 +24,44 @@ module Backbone {
 	// Handle to underscore.
 	export var _: underscore = (<any>root)._;
 
+	// Map from CRUD to HTTP for our default `Backbone.sync` implementation.
+	export var MethodType = {
+		CREATE: 'POST',
+		UPDATE: 'PUT',
+		DELETE: 'DELETE',
+		READ: 'GET'
+	};
+
+	// Override this function to change the manner in which Backbone persists
+	// models to the server. You will be passed the type of request, and the
+	// model in question. By default, makes a RESTful Ajax request
+	// to the model's `url()`. Some possible customizations could be:
+	export function sync(method: string, model: Model, settings?: JQueryAjaxSettings) {
+
+		settings || (settings = {});
+
+		// Default JSON-request options.
+		var params: JQueryAjaxSettings = { 
+			type: method, 
+			dataType: 'json', 
+			url: model.url,
+		};
+
+		// Ensure that we have the appropriate request data.
+		if (model && (method === MethodType.CREATE || method === MethodType.UPDATE)) {
+			params.contentType = 'application/json';
+			params.data = JSON.stringify(model.toJSON());
+		}
+
+		// Don't process data on a non-GET request.
+		if (params.type !== 'GET') {
+			params.processData = false;
+		}
+
+		// Make the request, allowing the user to override any Ajax options.
+		return $.ajax(_.extend(params, settings));
+	};
+
 	/**
 	* IEventHandler
 	* Turn on/off and trigger events through a callback functions.
@@ -107,7 +145,6 @@ module Backbone {
 				this._callbacks[event][id].context = (context || this);
 			}
 		}
-		
 		
 		public off(event: string, fn?: Function): void {
 		
@@ -302,20 +339,31 @@ module Backbone {
 
 	export class Model extends Events {
 
-		public changed = null;
+		public id: string;
 
-		private _silent = null;
+		private cid: string;
 
-		private _pending = null;
+		public url: string;
 
-		public idAttribute = 'id';
+		public attributes: any;
 
-		private attributes: any;
+		private _changed: any = {};
+
+		private _previousAttributes: any = {};
+
+		private _escapedAttributes: any = {};
+
+		private _changing: bool = false;
+
+		public sync = Backbone.sync;
 
 		constructor (
-			
-			attributes: any = {}) {
+			id: string,
+			attributes: any = {},) {
 			super();
+
+			this.id = id;
+			this.cid = _.uniqueId('c');
 
 			this.attributes = attributes;
 		}
@@ -324,10 +372,111 @@ module Backbone {
 			return _.clone(this.attributes);
 		}
 
-		// .. this is totally not typesafe, 
-		// but how to trigger change event when setting an object?
-		public get(attr) {
-			return this.attributes[attr];
+		public has(attribute: string): any {
+			return this.get(attribute) != null;
+		}
+
+		public get(attribute: string): any {
+			return this.attributes[attribute];
+		}
+
+		public escape(attribute: string): any {
+			var html;
+			if(html = this._escapedAttributes[attribute])
+				return html;
+			var val = this.get(attribute);
+			return this._escapedAttributes[attribute] = _.escape(val == null ? '' : '' + val);
+		}
+
+		public set(key: string, value: any, silent: bool = false): bool {
+
+			if (!this._validate(key, value))
+				return false;
+
+			if (!_.isEqual(this.attributes[key], value)) {
+				// Invalidate the escaped cache
+				delete this._escapedAttributes[key];
+
+				// Mark the key/value as changed, save the previous value
+				// and update the attribute
+				this._changed[key] = true;
+				this._previousAttributes[key] = this.attributes[key];
+				this.attributes[key] = value;
+			}
+
+			// If 
+			if (!silent)
+				this.change();
+
+			return true;
+		}
+
+		public unset(key: string, silent: bool = false): bool {
+			return this.set(key, null, silent);
+		}
+
+		public setAll(attributes: any, silent: bool = false): bool {
+
+			// Set all items silently first, then trigger a full change
+			// if requested.
+			for (var attribute in attributes) {
+				this.set(attribute, attributes[attribute], true);
+			}
+
+			if (!silent)
+				this.change();
+
+			return true;
+		}
+
+		public unsetAll(attributes: any, silent: bool = false): bool {
+
+			for (var attribute in attributes) {
+				this.set(attribute, null, true);
+			}
+
+			if (!silent)
+				this.change();
+
+			return true;
+		}
+
+		public clear(silent: bool = false) {
+			return this.unsetAll(this.attributes, silent);
+		}
+
+		public fetch(settings?: JQueryAjaxSettings) {
+			// needs some more thinking, perhaps an interface for the callbacks?
+			//var success = (resp, status, xhr) => {
+			//	if (!this.set(this.parse(resp, xhr), options))
+			//		return false;
+			//	if (success)
+			//		success(this, resp);
+			//}
+
+			return this.sync(Backbone.MethodType.READ, this, settings);
+		}
+
+		public change() {
+
+		}
+
+		public validate(key: string, value: any): bool {
+			return true;
+		}
+
+		private _validate(key: string, value: any): bool {
+
+			return true;
+		}
+
+		public validateAll(attributes: any): bool {
+			return true;
+		}
+
+		private _validateAll(attributes: any): bool {
+
+			return true;
 		}
 
 	}
