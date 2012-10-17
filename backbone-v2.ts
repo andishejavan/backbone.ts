@@ -62,6 +62,18 @@ module Backbone {
 		return $.ajax(_.extend(params, settings));
 	};
 
+	// Wrap an optional error callback with a fallback error event.
+	function wrapError(onError, originalModel, options) {
+		return function (model, resp) {
+			resp = model === originalModel ? resp : model;
+			if (onError) {
+				onError(originalModel, resp, options);
+			} else {
+				originalModel.trigger('error', originalModel, resp, options);
+			}
+		};
+	};
+
 	/**
 	* IEventHandler
 	* Turn on/off and trigger events through a callback functions.
@@ -337,17 +349,34 @@ module Backbone {
 		}
 	}
 
+	export class SetOptions {
+		
+		constructor (
+			public silent?: bool = false,
+			public unset?: bool = false,
+			public changes?: any = {}
+			) {
+
+		}
+	}
+
 	export class Model extends Events {
 
 		public id: string;
 
 		private cid: string;
 
+		public idAttribute: string = 'id';
+
 		public url: string;
 
 		public attributes: any;
 
-		private _changed: any = {};
+		public changed: any = {};
+
+		private _silent: any = {};
+
+		private _pending: any = {};
 
 		private _previousAttributes: any = {};
 
@@ -366,6 +395,7 @@ module Backbone {
 			this.cid = _.uniqueId('c');
 
 			this.attributes = attributes;
+			this._previousAttributes = _.clone(this.attributes);
 		}
 
 		public toJSON(): any {
@@ -388,93 +418,162 @@ module Backbone {
 			return this._escapedAttributes[attribute] = _.escape(val == null ? '' : '' + val);
 		}
 
-		public set(key: string, value: any, silent: bool = false): bool {
+		public set(
+			key: any, 
+			value?: any, 
+			options?: SetOptions = new SetOptions()): bool {
+			
+			var attrs, attr, val;
 
-			if (!this._validate(key, value))
+			// Handle both `"key", value` and `{key: value}` -style arguments.
+			if (_.isObject(key) || key == null) {
+				attrs = key;
+			} else {
+				attrs = {};
+				attrs[key] = value;
+			}
+
+			// Extract attributes and options.
+			if (!attrs) 
+				return false;
+			if (attrs instanceof Model) 
+				attrs = (<Model>attrs).attributes;
+			if (options.unset)
+				for (attr in attrs)
+					attrs[attr] = void 0;
+
+			// Run validation.
+			if (!this._validate(attrs)) 
 				return false;
 
-			if (!_.isEqual(this.attributes[key], value)) {
-				// Invalidate the escaped cache
-				delete this._escapedAttributes[key];
+			// Check for changes of `id`.
+			if (this.idAttribute in attrs) 
+				this.id = attrs[this.idAttribute];
 
-				// Mark the key/value as changed, save the previous value
-				// and update the attribute
-				this._changed[key] = true;
-				this._previousAttributes[key] = this.attributes[key];
-				this.attributes[key] = value;
+			var changes = options.changes = {};
+			var now = this.attributes;
+			var escaped = this._escapedAttributes;
+			var prev = this._previousAttributes || {};
+
+			// For each `set` attribute...
+			for (attr in attrs) {
+				val = attrs[attr];
+
+				// If the new and current value differ, record the change.
+				if (!_.isEqual(now[attr], val) || (options.unset && _.has(now, attr))) {
+					delete escaped[attr];
+					(options.silent ? this._silent : changes)[attr] = true;
+				}
+
+				// Update or delete the current value.
+				options.unset ? delete now[attr] : now[attr] = val;
+
+				// If the new and previous value differ, record the change.  If not,
+				// then remove changes for this attribute.
+				if (!_.isEqual(prev[attr], val) || (_.has(now, attr) != _.has(prev, attr))) {
+					this.changed[attr] = val;
+					if (!options.silent) this._pending[attr] = true;
+				} else {
+					delete this.changed[attr];
+					delete this._pending[attr];
+				}
 			}
 
-			// If 
-			if (!silent)
+			// Fire the `"change"` events.
+			if (!options.silent) 
 				this.change();
-
 			return true;
 		}
 
-		public unset(key: string, silent: bool = false): bool {
-			return this.set(key, null, silent);
-		}
-
-		public setAll(attributes: any, silent: bool = false): bool {
-
-			// Set all items silently first, then trigger a full change
-			// if requested.
-			for (var attribute in attributes) {
-				this.set(attribute, attributes[attribute], true);
-			}
-
-			if (!silent)
-				this.change();
-
-			return true;
-		}
-
-		public unsetAll(attributes: any, silent: bool = false): bool {
-
-			for (var attribute in attributes) {
-				this.set(attribute, null, true);
-			}
-
-			if (!silent)
-				this.change();
-
-			return true;
+		public unset(key: any, options: SetOptions): bool {
+			options.unset = true;
+			return this.set(key, null, options);
 		}
 
 		public clear(silent: bool = false) {
-			return this.unsetAll(this.attributes, silent);
+			return this.unset(_.clone(this.attributes), <SetOptions>{ unset: true });
 		}
 
 		public fetch(settings?: JQueryAjaxSettings) {
-			// needs some more thinking, perhaps an interface for the callbacks?
-			//var success = (resp, status, xhr) => {
-			//	if (!this.set(this.parse(resp, xhr), options))
-			//		return false;
-			//	if (success)
-			//		success(this, resp);
-			//}
+			settings = settings ? _.clone(settings) : {};
+			var success = settings.success;
+			settings.success = (resp, status, xhr) => {
+				if (!this.set(this.parse(resp, xhr), settings)) 
+					return false;
+				if (success) 
+					(<Function>success)(this, resp);
+			}
+			settings.error = wrapError(settings.error, this, settings);
+			return (this.sync || Backbone.sync).call(
+				this, 
+				Backbone.MethodType.READ, 
+				this, 
+				settings);
+		}
 
-			return this.sync(Backbone.MethodType.READ, this, settings);
+		// Set a hash of model attributes, and sync the model to the server.
+		// If the server returns an attributes hash that differs, the model's
+		// state will be `set` again.
+		public save(key, value, options?): any {
+			var attrs, current;
+
+			// Handle both `("key", value)` and `({key: value})` -style calls.
+			if (_.isObject(key) || key == null) {
+				attrs = key;
+				options = value;
+			} else {
+				attrs = {};
+				attrs[key] = value;
+			}
+			options = options ? _.clone(options) : {};
+
+			// If we're "wait"-ing to set changed attributes, validate early.
+			if (options.wait) {
+				if (!this._validate(attrs, options)) return false;
+				current = _.clone(this.attributes);
+			}
+
+			// Regular saves `set` attributes before persisting to the server.
+			var silentOptions = _.extend({}, options, { silent: true });
+			if (attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
+				return false;
+			}
+
+			// After a successful server-side save, the client is (optionally)
+			// updated with the server-side state.
+			//var model = this;
+			var success = options.success;
+			options.success = (resp, status, xhr) => {
+				var serverAttrs = this.parse(resp, xhr);
+				if (options.wait) {
+					delete options.wait;
+					serverAttrs = _.extend(attrs || {}, serverAttrs);
+				}
+				if (!this.set(serverAttrs, options)) return false;
+				if (success) {
+					success(this, resp);
+				} else {
+					this.trigger('sync', this, resp, options);
+				}
+			};
+
+			// Finish configuring and sending the Ajax request.
+			options.error = wrapError(options.error, this, options);
+			var method = this.isNew() ? 'create' : 'update';
+			var xhr = (this.sync || Backbone.sync).call(this, method, this, options);
+			if (options.wait) this.set(current, silentOptions);
+			return xhr;
 		}
 
 		public change() {
 
 		}
 
-		public validate(key: string, value: any): bool {
+		public validate(key: any, value?: any): bool {
 			return true;
 		}
 
-		private _validate(key: string, value: any): bool {
-
-			return true;
-		}
-
-		public validateAll(attributes: any): bool {
-			return true;
-		}
-
-		private _validateAll(attributes: any): bool {
+		private _validate(key: any, value?: any): bool {
 
 			return true;
 		}
