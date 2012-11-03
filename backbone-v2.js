@@ -34,23 +34,12 @@ var Backbone;
     }
     Backbone.sync = sync;
     ; ;
-    function wrapError(onError, originalModel, options) {
-        return function (model, resp) {
-            resp = model === originalModel ? resp : model;
-            if(onError) {
-                onError(originalModel, resp, options);
-            } else {
-                originalModel.trigger('error', originalModel, resp, options);
-            }
-        }
-    }
-    ; ;
     var Events = (function () {
         function Events() {
             this.clear();
         }
         Events.prototype.on = function (event, fn, context) {
-            var id = Backbone._.uniqueId("callback_");
+            var id = Backbone._.uniqueId("cb_");
             if(this._callbacks[event] === undefined) {
                 console.log("Events.on() creating event " + event);
                 this._callbacks[event] = {
@@ -173,204 +162,119 @@ var Backbone;
         return View;
     })(Events);
     Backbone.View = View;    
-    var SetOptions = (function () {
-        function SetOptions(silent, unset, changes) {
-            if (typeof silent === "undefined") { silent = false; }
-            if (typeof unset === "undefined") { unset = false; }
-            if (typeof changes === "undefined") { changes = {
-            }; }
-            this.silent = silent;
-            this.unset = unset;
-            this.changes = changes;
-        }
-        return SetOptions;
-    })();
-    Backbone.SetOptions = SetOptions;    
     var Model = (function (_super) {
         __extends(Model, _super);
-        function Model(id, attributes) {
+        function Model(attributes) {
             if (typeof attributes === "undefined") { attributes = {
             }; }
                 _super.call(this);
+            this.id = undefined;
             this.idAttribute = 'id';
-            this.changed = {
-            };
-            this._silent = {
-            };
-            this._pending = {
-            };
-            this._previousAttributes = {
-            };
+            this.sync = Backbone.sync;
             this._escapedAttributes = {
             };
-            this._changing = false;
-            this.sync = Backbone.sync;
-            this.id = id;
             this.cid = Backbone._.uniqueId('c');
             this.attributes = attributes;
-            this._previousAttributes = Backbone._.clone(this.attributes);
         }
         Model.prototype.toJSON = function () {
             return Backbone._.clone(this.attributes);
         };
-        Model.prototype.has = function (attribute) {
-            return this.get(attribute) != null;
+        Model.prototype.has = function (key) {
+            return this.attributes[key] != null;
         };
-        Model.prototype.get = function (attribute) {
-            return this.attributes[attribute];
+        Model.prototype.get = function (key) {
+            return this.attributes[key];
         };
-        Model.prototype.escape = function (attribute) {
+        Model.prototype.escape = function (key) {
             var html;
-            if(html = this._escapedAttributes[attribute]) {
+            if(html = this._escapedAttributes[key]) {
                 return html;
             }
-            var val = this.get(attribute);
-            return this._escapedAttributes[attribute] = Backbone._.escape(val == null ? '' : '' + val);
+            var val = this.get(key);
+            return this._escapedAttributes[key] = Backbone._.escape(val == null ? '' : '' + val);
         };
-        Model.prototype.set = function (key, value, options) {
-            if (typeof options === "undefined") { options = new SetOptions(); }
-            var attrs;
-            var attr;
-            var val;
-
-            if(Backbone._.isObject(key) || key == null) {
-                attrs = key;
-            } else {
-                attrs = {
-                };
-                attrs[key] = value;
-            }
-            if(!attrs) {
+        Model.prototype.set = function (key, value) {
+            if(!this.validate(key, value)) {
                 return false;
             }
-            if(attrs instanceof Model) {
-                attrs = (attrs).attributes;
-            }
-            if(options.unset) {
-                for(attr in attrs) {
-                    attrs[attr] = void 0;
-                }
-            }
-            if(!this._validate(attrs)) {
+            this.attributes[key] = value;
+            return true;
+        };
+        Model.prototype.setAll = function (attributes) {
+            if(!this.validateAll(attributes)) {
                 return false;
             }
-            if(this.idAttribute in attrs) {
-                this.id = attrs[this.idAttribute];
-            }
-            var changes = options.changes = {
-            };
-            var now = this.attributes;
-            var escaped = this._escapedAttributes;
-            var prev = this._previousAttributes || {
-            };
-            for(attr in attrs) {
-                val = attrs[attr];
-                if(!Backbone._.isEqual(now[attr], val) || (options.unset && Backbone._.has(now, attr))) {
-                    delete escaped[attr];
-                    (options.silent ? this._silent : changes)[attr] = true;
-                }
-                options.unset ? delete now[attr] : now[attr] = val;
-                if(!Backbone._.isEqual(prev[attr], val) || (Backbone._.has(now, attr) != Backbone._.has(prev, attr))) {
-                    this.changed[attr] = val;
-                    if(!options.silent) {
-                        this._pending[attr] = true;
-                    }
-                } else {
-                    delete this.changed[attr];
-                    delete this._pending[attr];
-                }
-            }
-            if(!options.silent) {
-                this.change();
+            for(var key in attributes) {
+                this.set(key, attributes[key]);
             }
             return true;
         };
-        Model.prototype.unset = function (key, options) {
-            options.unset = true;
-            return this.set(key, null, options);
+        Model.prototype.unset = function (key) {
+            if(!this.validate(key, undefined)) {
+                return false;
+            }
+            delete this.attributes[key];
+            return true;
         };
-        Model.prototype.clear = function (silent) {
-            if (typeof silent === "undefined") { silent = false; }
-            return this.unset(Backbone._.clone(this.attributes), {
-                unset: true
-            });
+        Model.prototype.unsetAll = function (attributes) {
+            if(!this.validateAll(attributes)) {
+                return false;
+            }
+            for(var key in attributes) {
+                delete this.attributes[key];
+            }
+            return true;
+        };
+        Model.prototype.clear = function () {
+            this.id = undefined;
+            this.attributes = {
+            };
+            this._escapedAttributes = {
+            };
+        };
+        Model.prototype.keys = function () {
+            return Backbone._(this.attributes).keys();
+        };
+        Model.prototype.values = function () {
+            return Backbone._(this.attributes).values();
         };
         Model.prototype.fetch = function (settings) {
             var _this = this;
             settings = settings ? Backbone._.clone(settings) : {
             };
             var success = settings.success;
-            settings.success = function (resp, status, xhr) {
-                if(!_this.set(_this.parse(resp, xhr), settings)) {
+            settings.success = function (data, status, xhr) {
+                if(!_this.setAll(_this.parse(data, xhr))) {
                     return false;
                 }
                 if(success) {
-                    (success)(_this, resp);
+                    success(_this, status, xhr);
                 }
             };
-            settings.error = wrapError(settings.error, this, settings);
             return (this.sync || Backbone.sync).call(this, Backbone.MethodType.READ, this, settings);
         };
-        Model.prototype.save = function (key, value, options) {
-            var _this = this;
-            var attrs;
-            var current;
-
-            if(Backbone._.isObject(key) || key == null) {
-                attrs = key;
-                options = value;
-            } else {
-                attrs = {
-                };
-                attrs[key] = value;
-            }
-            options = options ? Backbone._.clone(options) : {
-            };
-            if(options.wait) {
-                if(!this._validate(attrs, options)) {
-                    return false;
-                }
-                current = Backbone._.clone(this.attributes);
-            }
-            var silentOptions = Backbone._.extend({
-            }, options, {
-                silent: true
-            });
-            if(attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
-                return false;
-            }
-            var success = options.success;
-            options.success = function (resp, status, xhr) {
-                var serverAttrs = _this.parse(resp, xhr);
-                if(options.wait) {
-                    delete options.wait;
-                    serverAttrs = Backbone._.extend(attrs || {
-                    }, serverAttrs);
-                }
-                if(!_this.set(serverAttrs, options)) {
-                    return false;
-                }
-                if(success) {
-                    success(_this, resp);
-                } else {
-                    _this.trigger('sync', _this, resp, options);
-                }
-            };
-            options.error = wrapError(options.error, this, options);
-            var method = this.isNew() ? 'create' : 'update';
-            var xhr = (this.sync || Backbone.sync).call(this, method, this, options);
-            if(options.wait) {
-                this.set(current, silentOptions);
-            }
-            return xhr;
+        Model.prototype.save = function () {
         };
         Model.prototype.change = function () {
+        };
+        Model.prototype.isValid = function () {
+            return !this.validateAll(this.attributes);
         };
         Model.prototype.validate = function (key, value) {
             return true;
         };
-        Model.prototype._validate = function (key, value) {
+        Model.prototype.validateAll = function (attributes) {
             return true;
+        };
+        Model.prototype.parse = function (data, xhr) {
+            if (typeof xhr === "undefined") { xhr = undefined; }
+            return data;
+        };
+        Model.prototype.clone = function () {
+            return new Model(this.attributes);
+        };
+        Model.prototype.isNew = function () {
+            return this.id == null;
         };
         return Model;
     })(Events);

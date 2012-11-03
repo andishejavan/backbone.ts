@@ -22,7 +22,7 @@ module Backbone {
 	export var $ = jQuery;
 
 	// Handle to underscore.
-	export var _: underscore = (<any>root)._;
+	export var _: Underscore = (<any>root)._;
 
 	// Map from CRUD to HTTP for our default `Backbone.sync` implementation.
 	export var MethodType = {
@@ -36,7 +36,7 @@ module Backbone {
 	// models to the server. You will be passed the type of request, and the
 	// model in question. By default, makes a RESTful Ajax request
 	// to the model's `url()`. Some possible customizations could be:
-	export function sync(method: string, model: Model, settings?: JQueryAjaxSettings) {
+	export function sync(method: string, model: Model, settings?: JQueryAjaxSettings): JQueryXHR {
 
 		settings || (settings = {});
 
@@ -60,18 +60,6 @@ module Backbone {
 
 		// Make the request, allowing the user to override any Ajax options.
 		return $.ajax(_.extend(params, settings));
-	};
-
-	// Wrap an optional error callback with a fallback error event.
-	function wrapError(onError, originalModel, options) {
-		return function (model, resp) {
-			resp = model === originalModel ? resp : model;
-			if (onError) {
-				onError(originalModel, resp, options);
-			} else {
-				originalModel.trigger('error', originalModel, resp, options);
-			}
-		};
 	};
 
 	/**
@@ -143,7 +131,7 @@ module Backbone {
 
 		public on(event: string, fn: Function, context?: any): void {
 
-			var id = Backbone._.uniqueId("callback_");
+			var id = Backbone._.uniqueId("cb_");
 			// Create the event holder.
 			if (this._callbacks[event] === undefined) {
 				console.log("Events.on() creating event " + event);
@@ -349,20 +337,9 @@ module Backbone {
 		}
 	}
 
-	export class SetOptions {
-		
-		constructor (
-			public silent?: bool = false,
-			public unset?: bool = false,
-			public changes?: any = {}
-			) {
-
-		}
-	}
-
 	export class Model extends Events {
 
-		public id: string;
+		public id: string = undefined;
 
 		private cid: string;
 
@@ -370,140 +347,118 @@ module Backbone {
 
 		public url: string;
 
-		public attributes: any;
-
-		public changed: any = {};
-
-		private _silent: any = {};
-
-		private _pending: any = {};
-
-		private _previousAttributes: any = {};
-
-		private _escapedAttributes: any = {};
-
-		private _changing: bool = false;
+		public attributes: { [key: string]: any; };
 
 		public sync = Backbone.sync;
 
+		public collection: Collection = undefined;
+
+		private _escapedAttributes: { [key: string]: any; } = {};
+
 		constructor (
-			id: string,
-			attributes: any = {},) {
+			attributes: { [key: string]: any; } = {}) {
 			super();
 
-			this.id = id;
 			this.cid = _.uniqueId('c');
 
 			this.attributes = attributes;
-			this._previousAttributes = _.clone(this.attributes);
 		}
 
 		public toJSON(): any {
 			return _.clone(this.attributes);
 		}
 
-		public has(attribute: string): any {
-			return this.get(attribute) != null;
+		public has(key: string): any {
+			return this.attributes[key] != null;
 		}
 
-		public get(attribute: string): any {
-			return this.attributes[attribute];
+		public get(key: string): any {
+			return this.attributes[key];
 		}
 
-		public escape(attribute: string): any {
+		public escape(key: string): any {
 			var html;
-			if(html = this._escapedAttributes[attribute])
+			if (html = this._escapedAttributes[key]) {
 				return html;
-			var val = this.get(attribute);
-			return this._escapedAttributes[attribute] = _.escape(val == null ? '' : '' + val);
+			}
+			var val = this.get(key);
+			return this._escapedAttributes[key] = _.escape(val == null ? '' : '' + val);
 		}
 
-		public set(
-			key: any, 
-			value?: any, 
-			options?: SetOptions = new SetOptions()): bool {
-			
-			var attrs, attr, val;
-
-			// Handle both `"key", value` and `{key: value}` -style arguments.
-			if (_.isObject(key) || key == null) {
-				attrs = key;
-			} else {
-				attrs = {};
-				attrs[key] = value;
-			}
-
-			// Extract attributes and options.
-			if (!attrs) 
+		public set(key: string, value: any): bool {
+			if (!this.validate(key, value)) {
 				return false;
-			if (attrs instanceof Model) 
-				attrs = (<Model>attrs).attributes;
-			if (options.unset)
-				for (attr in attrs)
-					attrs[attr] = void 0;
-
-			// Run validation.
-			if (!this._validate(attrs)) 
-				return false;
-
-			// Check for changes of `id`.
-			if (this.idAttribute in attrs) 
-				this.id = attrs[this.idAttribute];
-
-			var changes = options.changes = {};
-			var now = this.attributes;
-			var escaped = this._escapedAttributes;
-			var prev = this._previousAttributes || {};
-
-			// For each `set` attribute...
-			for (attr in attrs) {
-				val = attrs[attr];
-
-				// If the new and current value differ, record the change.
-				if (!_.isEqual(now[attr], val) || (options.unset && _.has(now, attr))) {
-					delete escaped[attr];
-					(options.silent ? this._silent : changes)[attr] = true;
-				}
-
-				// Update or delete the current value.
-				options.unset ? delete now[attr] : now[attr] = val;
-
-				// If the new and previous value differ, record the change.  If not,
-				// then remove changes for this attribute.
-				if (!_.isEqual(prev[attr], val) || (_.has(now, attr) != _.has(prev, attr))) {
-					this.changed[attr] = val;
-					if (!options.silent) this._pending[attr] = true;
-				} else {
-					delete this.changed[attr];
-					delete this._pending[attr];
-				}
 			}
-
-			// Fire the `"change"` events.
-			if (!options.silent) 
-				this.change();
+			this.attributes[key] = value;
 			return true;
 		}
 
-		public unset(key: any, options: SetOptions): bool {
-			options.unset = true;
-			return this.set(key, null, options);
+		public setAll(attributes: { [key: string]: any; }): bool {
+			if (!this.validateAll(attributes)) {
+				return false;
+			}
+			
+			for (var key in attributes) {
+				this.set(key, attributes[key])
+			}
+			return true;
 		}
 
-		public clear(silent: bool = false) {
-			return this.unset(_.clone(this.attributes), <SetOptions>{ unset: true });
+		public unset(key: string): bool {
+			if (!this.validate(key, undefined)) {
+				return false;
+			}
+
+			delete this.attributes[key];
+			return true;
 		}
 
-		public fetch(settings?: JQueryAjaxSettings) {
+		// the values in attributes is ignored 
+		public unsetAll(attributes: { [key: string]: any; }): bool {
+			if (!this.validateAll(attributes)) {
+				return false;
+			}
+			
+			for (var key in attributes) {
+				delete this.attributes[key];
+			}
+
+			return true;
+		}
+
+		public clear() {
+			this.id = undefined;
+			this.attributes = {};
+			this._escapedAttributes = {};
+		}
+
+		public keys(): string[] {
+			return _(this.attributes).keys();
+		}
+
+		public values(): any[] {
+			return _(this.attributes).values();
+		}
+
+		public fetch(settings?: JQueryAjaxSettings): JQueryXHR {
 			settings = settings ? _.clone(settings) : {};
 			var success = settings.success;
-			settings.success = (resp, status, xhr) => {
-				if (!this.set(this.parse(resp, xhr), settings)) 
+
+			// Inject between the success callback so that the model
+			// attributes can be updated before sending to the user callback.
+			settings.success = (data: any, status: string, jqxhr: JQueryXHR): bool => {
+				if (!this.setAll(this.parse(data, jqxhr))) {
 					return false;
-				if (success) 
-					(<Function>success)(this, resp);
+				}
+
+				// Call the user's success callback if the attributes
+				// were set after being validated.
+				if (success) {
+					success(this, status, jqxhr);
+				}
+				return true;
 			}
-			settings.error = wrapError(settings.error, this, settings);
+			
 			return (this.sync || Backbone.sync).call(
 				this, 
 				Backbone.MethodType.READ, 
@@ -511,72 +466,99 @@ module Backbone {
 				settings);
 		}
 
-		// Set a hash of model attributes, and sync the model to the server.
-		// If the server returns an attributes hash that differs, the model's
-		// state will be `set` again.
-		public save(key, value, options?): any {
-			var attrs, current;
+		public save(settings?: JQueryAjaxSettings): JQueryXHR {
+			settings = settings ? _.clone(settings) : {};
 
-			// Handle both `("key", value)` and `({key: value})` -style calls.
-			if (_.isObject(key) || key == null) {
-				attrs = key;
-				options = value;
-			} else {
-				attrs = {};
-				attrs[key] = value;
-			}
-			options = options ? _.clone(options) : {};
+			var success = settings.success;
+			settings.success = (data: any, status: string, jqxhr: JQueryXHR): bool => {
+				var serverAttributes = this.parse(data, jqxhr);
 
-			// If we're "wait"-ing to set changed attributes, validate early.
-			if (options.wait) {
-				if (!this._validate(attrs, options)) return false;
-				current = _.clone(this.attributes);
-			}
-
-			// Regular saves `set` attributes before persisting to the server.
-			var silentOptions = _.extend({}, options, { silent: true });
-			if (attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
-				return false;
-			}
-
-			// After a successful server-side save, the client is (optionally)
-			// updated with the server-side state.
-			//var model = this;
-			var success = options.success;
-			options.success = (resp, status, xhr) => {
-				var serverAttrs = this.parse(resp, xhr);
-				if (options.wait) {
-					delete options.wait;
-					serverAttrs = _.extend(attrs || {}, serverAttrs);
+				if (!this.setAll(serverAttributes)) {
+					return false;
 				}
-				if (!this.set(serverAttrs, options)) return false;
+
 				if (success) {
-					success(this, resp);
-				} else {
-					this.trigger('sync', this, resp, options);
+					success(this, status, jqxhr);
 				}
-			};
 
-			// Finish configuring and sending the Ajax request.
-			options.error = wrapError(options.error, this, options);
-			var method = this.isNew() ? 'create' : 'update';
-			var xhr = (this.sync || Backbone.sync).call(this, method, this, options);
-			if (options.wait) this.set(current, silentOptions);
-			return xhr;
+				return true;
+			}
+
+			var method = this.isNew() ? 
+				Backbone.MethodType.CREATE :
+				Backbone.MethodType.UPDATE;
+
+			var jqxhr = (this.sync || Backbone.sync).call(this, method, this, settings);
+			return jqxhr;
+		}
+
+		public destroy(settings?: JQueryAjaxSettings, wait?: bool = false): JQueryXHR {
+			settings = settings ? _.clone(settings) : {};
+
+			// Nothing to do, destroy callback immediatly and exit.
+			if (this.isNew()) {
+				this.onDestroyed(settings);
+				return null;
+			}
+
+			var success = settings.success;
+			settings.success = (data: any, status: string, jqxhr: JQueryXHR): bool => {
+				// Server has responded so trigger the destroy callback.
+				if (wait) {
+					this.onDestroyed(settings);
+				}
+				if (success) {
+					success(data, status, jqxhr);
+				} else {
+					// wat? I hope this isn't supposed to be Backbone.sync...?
+					this.trigger('sync', this, data, settings);
+				}
+				return true;
+			}
+
+			if (!wait) {
+				// Destroy on client immediatly if not waiting for server response.
+				this.onDestroyed(settings);
+			}
+			return (this.sync || Backbone.sync).call(this, Backbone.MethodType.DELETE, this, settings);
+		}
+
+		public onDestroyed(settings: JQueryAjaxSettings): void {
+
 		}
 
 		public change() {
-
+			// need to keep track of changed attributes to suppor this
 		}
 
-		public validate(key: any, value?: any): bool {
+		public isValid(): bool {
+			return !this.validateAll(this.attributes);
+		}
+
+		public validate(key: string, value: any): bool {
 			return true;
 		}
 
-		private _validate(key: any, value?: any): bool {
-
+		public validateAll(attributes: { [key: string]: any; }): bool {
 			return true;
 		}
+
+		public parse(data: any, xhr: JQueryXHR = undefined): { [key: string]: any; } {
+			return data;
+		}
+
+		// Create a new model with identical attributes to this one.
+		public clone(): Model {
+			return new Model(this.attributes);
+		}
+
+		// A model is new if it has never been saved to the server, and lacks an id.
+		public isNew(): bool {
+			return this.id == null;
+		}
+	}
+
+	export class Collection extends Events {
 
 	}
 }
