@@ -5,6 +5,10 @@ var __extends = this.__extends || function (d, b) {
 }
 var Application = (function () {
     function Application() {
+        var bars = new Bars();
+        var barModel = new Bar();
+        barModel.collection = bars;
+        alert(barModel.url());
         var button = document.createElement("button");
         var button2 = document.createElement("button");
         $("#content").append(button, button2);
@@ -23,13 +27,29 @@ var Application = (function () {
     }
     return Application;
 })();
+var Bar = (function (_super) {
+    __extends(Bar, _super);
+    function Bar() {
+        _super.call(this);
+        this._urlRoot = "bar";
+    }
+    return Bar;
+})(Backbone.Model);
+var Bars = (function (_super) {
+    __extends(Bars, _super);
+    function Bars() {
+        _super.call(this);
+        this.url = "bars";
+    }
+    return Bars;
+})(Backbone.Collection);
 var Foo = (function (_super) {
     __extends(Foo, _super);
     function Foo(id, el) {
         _super.call(this, id, el, undefined, [
-    new Backbone.Event(Foo.prototype.onClick, "click"), 
-    new Backbone.Event(Foo.prototype.mouseOver, "mouseover"), 
-    new Backbone.Event(Foo.prototype.mouseOut, "mouseout")
+    new Backbone.DomEvent(Foo.prototype.onClick, "click"), 
+    new Backbone.DomEvent(Foo.prototype.mouseOver, "mouseover"), 
+    new Backbone.DomEvent(Foo.prototype.mouseOut, "mouseout")
 ]);
         this.clickedCount = 0;
     }

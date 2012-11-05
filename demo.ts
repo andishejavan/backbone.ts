@@ -4,6 +4,13 @@ class Application {
 
 	constructor () {
 
+		var bars = new Bars();
+		var barModel = new Bar();
+
+		barModel.collection = bars;
+
+		alert(barModel.url());
+
 		var button = document.createElement("button");
 		var button2 = document.createElement("button");
 
@@ -30,6 +37,25 @@ class Application {
 
 }
 
+class Bar extends Backbone.Model {
+
+	private _urlRoot: string = "bar";
+
+	constructor () {
+		super();
+	}
+}
+
+class Bars extends Backbone.Collection {
+
+	public url: string = "bars";
+
+	constructor () {
+		super();
+
+	}
+}
+
 class Foo extends Backbone.View {
 
 	public clickedCount: number = 0;
@@ -38,12 +64,11 @@ class Foo extends Backbone.View {
 		super(
 			id,
 			el,
-			undefined,
 			[
 				// ugh @ not being able to reference 'this'
-				new Backbone.Event(Foo.prototype.onClick, "click"), 
-				new Backbone.Event(Foo.prototype.mouseOver, "mouseover"), 
-				new Backbone.Event(Foo.prototype.mouseOut, "mouseout")
+				new Backbone.DOMEvent(Foo.prototype.onClick, "click"), 
+				new Backbone.DOMEvent(Foo.prototype.mouseOver, "mouseover"), 
+				new Backbone.DOMEvent(Foo.prototype.mouseOut, "mouseout")
 			]);
 	}
 	;

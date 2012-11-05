@@ -1,4 +1,4 @@
-//     underscore.d.ts
+//     underscore-1.4.2.d.ts
 //     (c) 2012 Josh Baldwin
 //     underscore.d.ts may be freely distributed under the MIT license.
 //     For all details and documentation:
@@ -868,6 +868,9 @@ interface Underscore {
 	* Any nested objects or arrays will be copied by reference, not duplicated.
 	**/
 	clone(object: Object): Object;
+	clone(list: string[]): string[];
+	clone(list: number[]): number[];
+	clone(list: any[]): any[];
 
 	/**
 	* Invokes interceptor with the object, and then returns object. The primary purpose of this method
@@ -1610,6 +1613,12 @@ interface UnderscoreStringArrayOOPWrapper {
 	/**********
 	* Objects *
 	***********/
+	
+	/**
+	* Create a shallow-copied clone of the object.
+	* Any nested objects or arrays will be copied by reference, not duplicated.
+	**/
+	clone(): string[];
 
 	/**
 	* Returns true if object is a DOM element.
@@ -2226,6 +2235,12 @@ interface UnderscoreNumberArrayOOPWrapper {
 	/**********
 	* Objects *
 	***********/
+	
+	/**
+	* Create a shallow-copied clone of the object.
+	* Any nested objects or arrays will be copied by reference, not duplicated.
+	**/
+	clone(list: number[]): number[];
 
 	/**
 	* Returns true if object is a DOM element.
@@ -2971,6 +2986,12 @@ interface UnderscoreObjectArrayOOPWrapper {
 	/**********
 	* Objects *
 	***********/
+	
+	/**
+	* Create a shallow-copied clone of the object.
+	* Any nested objects or arrays will be copied by reference, not duplicated.
+	**/
+	clone(list: any[]): any[];
 
 	/**
 	* Returns true if object is a DOM element.

@@ -21,7 +21,7 @@ var Backbone;
         var params = {
             type: method,
             dataType: 'json',
-            url: model.url
+            url: model.url()
         };
         if(model && (method === Backbone.MethodType.CREATE || method === Backbone.MethodType.UPDATE)) {
             params.contentType = 'application/json';
@@ -89,16 +89,16 @@ var Backbone;
         return Events;
     })();
     Backbone.Events = Events;    
-    var Event = (function () {
-        function Event(fn, event, selector) {
+    var DomEvent = (function () {
+        function DomEvent(fn, event, selector) {
             if (typeof selector === "undefined") { selector = undefined; }
             this.fn = fn;
             this.event = event;
             this.selector = selector;
         }
-        return Event;
+        return DomEvent;
     })();
-    Backbone.Event = Event;    
+    Backbone.DomEvent = DomEvent;    
     var View = (function (_super) {
         __extends(View, _super);
         function View(id, el, model, events) {
@@ -111,7 +111,7 @@ var Backbone;
             this.domEvents = {
             };
             for(var i = 0; i < events.length; i++) {
-                this.domEvents[events[i].event] = events[i];
+                this.domEvents[events[i].event] = Backbone._.clone(events[i]);
             }
             this.setElement(el, true);
         }
@@ -164,17 +164,20 @@ var Backbone;
     Backbone.View = View;    
     var Model = (function (_super) {
         __extends(Model, _super);
-        function Model(attributes) {
+        function Model(attributes, urlRoot) {
             if (typeof attributes === "undefined") { attributes = {
             }; }
+            if (typeof urlRoot === "undefined") { urlRoot = undefined; }
                 _super.call(this);
             this.id = undefined;
             this.idAttribute = 'id';
             this.sync = Backbone.sync;
+            this.collection = undefined;
             this._escapedAttributes = {
             };
             this.cid = Backbone._.uniqueId('c');
             this.attributes = attributes;
+            this._urlRoot = urlRoot;
         }
         Model.prototype.toJSON = function () {
             return Backbone._.clone(this.attributes);
@@ -185,23 +188,14 @@ var Backbone;
         Model.prototype.get = function (key) {
             return this.attributes[key];
         };
-        Model.prototype.escape = function (key) {
-            var html;
-            if(html = this._escapedAttributes[key]) {
-                return html;
-            }
-            var val = this.get(key);
-            return this._escapedAttributes[key] = Backbone._.escape(val == null ? '' : '' + val);
-        };
         Model.prototype.set = function (key, value) {
-            if(!this.validate(key, value)) {
-                return false;
-            }
-            this.attributes[key] = value;
-            return true;
+            var wrap = {
+            };
+            wrap[key] = value;
+            return this.setAll(wrap);
         };
         Model.prototype.setAll = function (attributes) {
-            if(!this.validateAll(attributes)) {
+            if(!this._validate(attributes)) {
                 return false;
             }
             for(var key in attributes) {
@@ -210,14 +204,13 @@ var Backbone;
             return true;
         };
         Model.prototype.unset = function (key) {
-            if(!this.validate(key, undefined)) {
-                return false;
-            }
-            delete this.attributes[key];
-            return true;
+            var wrap = {
+            };
+            wrap[key] = undefined;
+            return this.unsetAll(wrap);
         };
         Model.prototype.unsetAll = function (attributes) {
-            if(!this.validateAll(attributes)) {
+            if(!this._validate(attributes)) {
                 return false;
             }
             for(var key in attributes) {
@@ -238,33 +231,84 @@ var Backbone;
         Model.prototype.values = function () {
             return Backbone._(this.attributes).values();
         };
+        Model.prototype.escape = function (key) {
+            var html;
+            if(html = this._escapedAttributes[key]) {
+                return html;
+            }
+            var val = this.get(key);
+            return this._escapedAttributes[key] = Backbone._.escape(val == null ? '' : '' + val);
+        };
         Model.prototype.fetch = function (settings) {
             var _this = this;
             settings = settings ? Backbone._.clone(settings) : {
             };
             var success = settings.success;
-            settings.success = function (data, status, xhr) {
-                if(!_this.setAll(_this.parse(data, xhr))) {
+            settings.success = function (data, status, jqxhr) {
+                if(!_this.setAll(_this.parse(data, jqxhr))) {
                     return false;
                 }
                 if(success) {
-                    success(_this, status, xhr);
+                    success(_this, status, jqxhr);
                 }
+                return true;
             };
             return (this.sync || Backbone.sync).call(this, Backbone.MethodType.READ, this, settings);
         };
-        Model.prototype.save = function () {
+        Model.prototype.save = function (settings) {
+            var _this = this;
+            settings = settings ? Backbone._.clone(settings) : {
+            };
+            var success = settings.success;
+            settings.success = function (data, status, jqxhr) {
+                var serverAttributes = _this.parse(data, jqxhr);
+                if(!_this.setAll(serverAttributes)) {
+                    return false;
+                }
+                if(success) {
+                    success(_this, status, jqxhr);
+                }
+                return true;
+            };
+            var method = this.isNew() ? Backbone.MethodType.CREATE : Backbone.MethodType.UPDATE;
+            var jqxhr = (this.sync || Backbone.sync).call(this, method, this, settings);
+            return jqxhr;
         };
-        Model.prototype.change = function () {
+        Model.prototype.destroy = function (settings, wait) {
+            if (typeof wait === "undefined") { wait = false; }
+            var _this = this;
+            settings = settings ? Backbone._.clone(settings) : {
+            };
+            if(this.isNew()) {
+                this.onDestroyed(settings);
+                return null;
+            }
+            var success = settings.success;
+            settings.success = function (data, status, jqxhr) {
+                if(wait) {
+                    _this.onDestroyed(settings);
+                }
+                if(success) {
+                    success(data, status, jqxhr);
+                } else {
+                    _this.trigger('sync', _this, data, settings);
+                }
+                return true;
+            };
+            if(!wait) {
+                this.onDestroyed(settings);
+            }
+            return (this.sync || Backbone.sync).call(this, Backbone.MethodType.DELETE, this, settings);
         };
-        Model.prototype.isValid = function () {
-            return !this.validateAll(this.attributes);
+        Model.prototype.urlRoot = function (urlRoot) {
+            this._urlRoot = urlRoot;
         };
-        Model.prototype.validate = function (key, value) {
-            return true;
-        };
-        Model.prototype.validateAll = function (attributes) {
-            return true;
+        Model.prototype.url = function () {
+            var base = this._urlRoot || this.collection.url || "/";
+            if(this.isNew) {
+                return base;
+            }
+            return base + (base.charAt(base.length - 1) == "/" ? "" : "/") + encodeURIComponent(this.id);
         };
         Model.prototype.parse = function (data, xhr) {
             if (typeof xhr === "undefined") { xhr = undefined; }
@@ -276,8 +320,38 @@ var Backbone;
         Model.prototype.isNew = function () {
             return this.id == null;
         };
+        Model.prototype.isValid = function () {
+            return !this._validate(this.attributes);
+        };
+        Model.prototype.validate = function (attributes) {
+            return true;
+        };
+        Model.prototype._validate = function (attributes) {
+            attributes = Backbone._.extend({
+            }, this.attributes, attributes);
+            var error = this.validate(attributes);
+            if(!error) {
+                return true;
+            }
+            this.onValidateError(attributes);
+            return false;
+        };
+        Model.prototype.onDestroyed = function (settings) {
+        };
+        Model.prototype.onValidateError = function (attributes) {
+        };
         return Model;
     })(Events);
     Backbone.Model = Model;    
+    var Collection = (function (_super) {
+        __extends(Collection, _super);
+        function Collection() {
+            _super.apply(this, arguments);
+
+            this.url = undefined;
+        }
+        return Collection;
+    })(Events);
+    Backbone.Collection = Collection;    
 })(Backbone || (Backbone = {}));
 
