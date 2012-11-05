@@ -737,9 +737,261 @@ module Backbone {
 		onValidateError(attributes: { [key: string]: any; }): void;
 	}
 
-	export class Collection extends Events {
+	export class Collection extends Events implements IBackboneCollection {
+
+		public model: Model;
+
+		public models: Model[];
+
+		public length: number;
 
 		public url: string = undefined;
 
+		public sync = Backbone.sync;
+
+		private _byId = undefined;
+
+		private _byCid = undefined;
+
+		constructor (model: Model) {
+			super();
+
+			this.model = model;
+		}
+
+		public toJSON() {
+			return this.map((model: Model) => {
+				return model.toJSON();
+			});
+		}
+
+		public add() {
+
+		}
+
+		public remove() {
+
+		}
+
+		public push() {
+
+		}
+
+		public pop() {
+
+		}
+
+		public unshift() {
+
+		}
+
+		public shift() {
+
+		}
+
+		public get() {
+
+		}
+
+		public getByCid() {
+
+		}
+
+		public at() {
+
+		}
+
+		public where() {
+
+		}
+
+		public sort() {
+
+		}
+
+		public pluck() {
+
+		}
+
+		public reset() {
+
+		}
+
+		public fetch() {
+
+		}
+
+		public create() {
+
+		}
+
+		public parse() {
+
+		}
+
+		// Proxy to _'s chain.
+		public chain() {
+			return _(this.models).chain();
+		}
+
+		// Underscore proxy.
+		public each(iterator: (model: Model, index?: number, list?: Model[]) => any, context?): any {
+			return _.each(this.models, iterator, context);
+		}
+
+		// Alias for each
+		public forEach = Collection.prototype.each;
+
+		// Underscore proxy.
+		public map(iterator: (model: Model, index?: number, list?: Model[]) => any, context?): any[] {
+			return _.map(this.models, iterator, context);
+		}
+
+		// Underscore proxy.
+		public reduce(iterator: (model: Model, index?: number, list?: Model[]) => any, memo, context?) {
+			return _.reduce(this.models, iterator, memo, context);
+		}
+
+		// Underscore proxy.
+		public reduceRight(iterator: (model: Model, index?: number, list?: Model[]) => any, memo, context?) {
+			return _.reduceRight(this.models, iterator, memo, context);
+		}
+
+		// Underscore proxy.
+		public find(iterator: (model: Model, index?: number, list?: Model[]) => bool, context?) {
+			return _.find(this.models, iterator, context);
+		}
+
+		// Alias for find
+		public detect = Collection.prototype.find;
+
+		// Underscore proxy.
+		public filter(iterator: (model: Model) => bool, context? ): Model[] {
+			return _.filter(this.models, iterator, context);
+		}
+
+		// Underscore proxy.
+		public select = Collection.prototype.filter;
+
+		// Underscore proxy.
+		public reject(iterator: (model: Model) => bool, context?: any): Model[] {
+			return _.reject(this.models, iterator, context);
+		}
+
+		// Underscore proxy.
+		public all(iterator: (model: Model) => bool, context?: any): bool {
+			return _.all(this.models, iterator, context);
+		}
+
+		// Alias for all.
+		public every = Collection.prototype.all;
+
+		// Underscore proxy.
+		public any(iterator: (model: Model) => bool, context?: any): bool {
+			return _.any(this.models, iterator, context);
+		}
+
+		// Alias for any.
+		public some = Collection.prototype.any;
+
+		// Underscore proxy.
+		public contains(model: Model): bool {
+			return _.contains(this.models, model);
+		}
+
+		// Alias for contains.
+		public include = Collection.prototype.contains;
+
+		// Underscore proxy.
+		public invoke(methodName: string, ...args: any[]): void {
+			_.invoke(this.models, methodName, args);
+		}
+
+		// Underscore proxy.
+		public max(iterator?: (model: Model) => any, context?: any): Model {
+			return _.max(this.models, iterator, context);
+		}
+
+		// Underscore proxy.
+		public min(iterator?: (model: Model) => any, context?: any): Model {
+			return _.min(this.models, iterator, context);
+		}
+
+		// Underscore proxy.
+		public sortBy(iterator: (model: Model) => any, context?: any): Model[] {
+			return _.sortBy(this.models, iterator, context);
+		}
+
+		// Underscore proxy.
+		public groupBy(iterator: (model: Model) => any): any {
+			return _.groupBy(this.models, iterator);
+		}
+
+		// Underscore proxy.
+		public sortedIndex(model: Model, iterator?: (model: Model) => any) {
+			return _.sortedIndex(this.models, model, iterator);
+		}
+
+		// Underscore proxy.
+		public toArray(): Model[] {
+			return _.toArray(this.models);
+		}
+
+		// Underscore proxy.
+		public size(): number {
+			return _.size(this.models);
+		}
+
+		// Underscore proxy.
+		public first(): Model {
+			return _.first(this.models);
+		}
+
+		// Underscore proxy.
+		public initial(n?: number): Model[] {
+			return _.initial(this.models, n);
+		}
+
+		// Underscore proxy.
+		public last(n?: number): Model[] {
+			return _.last(this.models, n);
+		}
+
+		// Underscore proxy.
+		public rest(index?: number): Model[] {
+			return _.rest(this.models, index);
+		}
+
+		// Underscore proxy.
+		// todo: not sure if passing the arguments like this will work
+		public without(...values: any[]) {
+			return _.without(this.models, arguments)
+		}
+
+		// Underscore proxy.
+		// isSorted: bool => Tells the function to use more efficient binary search
+		// isSorted: number => Tells the function to start looking from index 
+		public indexOf(model: Model, isSorted?: any): number {
+			return _.indexOf(this.models, model, isSorted);
+		}
+
+		// Underscore proxy.
+		public lastIndexOf(model: Model, fromIndex?: number): number {
+			return _.lastIndexOf(this.models, model, fromIndex);
+		}
+
+		// Underscore proxy.
+		public shuffle(): Model[] {
+			return _.shuffle(this.models);
+		}
+
+		// Underscore proxy.
+		public isEmpty() {
+			return _.isEmpty(this.models);
+		}
+	}
+
+	export interface IBackboneCollection {
+		parse();
 	}
 }
