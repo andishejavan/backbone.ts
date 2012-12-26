@@ -1,15 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "backbone.ts", "backbone.ts.csproj", "{0432FCD3-AB3B-4BD8-8454-AB0D7171A013}"
+# Visual Studio Express 2012 for Web
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backbone.ts", "Backbone.ts.csproj", "{71E413C7-B738-4BC8-9B52-C2D44FF65DC1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0432FCD3-AB3B-4BD8-8454-AB0D7171A013}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0432FCD3-AB3B-4BD8-8454-AB0D7171A013}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71E413C7-B738-4BC8-9B52-C2D44FF65DC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71E413C7-B738-4BC8-9B52-C2D44FF65DC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71E413C7-B738-4BC8-9B52-C2D44FF65DC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71E413C7-B738-4BC8-9B52-C2D44FF65DC1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

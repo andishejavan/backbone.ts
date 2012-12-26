@@ -1,19 +1,39 @@
-var Shapes;
-(function (Shapes) {
-
-    var Point = Shapes.Point = (function () {
-        function Point(x, y) {
-            this.x = x;
-            this.y = y;
+var Backbone;
+(function (Backbone) {
+    var Event = (function () {
+        function Event(context) {
+            if (typeof context === "undefined") { context = {
+            }; }
+            this._fns = new Array();
+            this._context = context;
         }
-        Point.prototype.getDist = function () {
-            return Math.sqrt((this.x * this.x) + (this.y * this.y));
+        Event.prototype.Add = function (fn) {
+            this._fns.push(fn);
         };
-        Point.origin = new Point(0, 0);
-        return Point;
+        Event.prototype.Remove = function (fn) {
+            for(var i = 0; i < this._fns.length; i++) {
+                if(this._fns[i] === fn) {
+                    this._fns.splice(i, 1);
+                    return true;
+                }
+            }
+            return false;
+        };
+        Event.prototype.Clear = function () {
+            this._fns = [];
+        };
+        Event.prototype.Trigger = function () {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            var fns = this._fns.slice(0);
+            for(var i = 0; i < fns.length; i++) {
+                fns[i].apply(this._context, args || []);
+            }
+        };
+        return Event;
     })();
-
-})(Shapes || (Shapes = {}));
-
-var p = new Shapes.Point(3, 4);
-var dist = p.getDist(); 
+    Backbone.Event = Event;    
+})(Backbone || (Backbone = {}));
+//@ sourceMappingURL=Event.js.map
