@@ -1,3 +1,14 @@
+var EventTest = (function () {
+    function EventTest() { }
+    EventTest.RunTests = function RunTests() {
+        var handler = new MessageHandler();
+        handler.msgEvent.Add(callback);
+        handler.changeMsg("im the new message and discovered through a typed event!");
+        handler.msgEvent.Remove(callback);
+        handler.changeMsg("no callbacks so this won't be seen.");
+    }
+    return EventTest;
+})();
 var MessageHandler = (function () {
     function MessageHandler() {
         this.msg = "hello there!";
@@ -12,9 +23,4 @@ var MessageHandler = (function () {
 function callback(msg) {
     alert("new message: " + msg);
 }
-var handler = new MessageHandler();
-handler.msgEvent.Add(callback);
-handler.changeMsg("im the new message and discovered through a typed event!");
-handler.msgEvent.Remove(callback);
-handler.changeMsg("no callbacks so this won't be seen.");
 //@ sourceMappingURL=EventTest.js.map
