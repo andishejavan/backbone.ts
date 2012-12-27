@@ -1,5 +1,15 @@
 var Backbone;
 (function (Backbone) {
+    var DOMEvent = (function () {
+        function DOMEvent(fn, event, selector) {
+            if (typeof selector === "undefined") { selector = undefined; }
+            this.fn = fn;
+            this.event = event;
+            this.selector = selector;
+        }
+        return DOMEvent;
+    })();
+    Backbone.DOMEvent = DOMEvent;    
     var Event = (function () {
         function Event(context) {
             if (typeof context === "undefined") { context = {

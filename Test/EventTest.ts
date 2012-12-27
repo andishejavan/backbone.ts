@@ -1,4 +1,22 @@
-/// <reference path="../Event.ts" />
+/// <reference path="../Backbone.ts" />
+
+class EventTest {
+
+	public static RunTests() {
+
+		var handler = new MessageHandler();
+		// add the event callback
+		handler.msgEvent.Add(callback);
+		// trigger the event
+		handler.changeMsg("im the new message and discovered through a typed event!");
+
+		// remove the event callback
+		handler.msgEvent.Remove(callback);
+		handler.changeMsg("no callbacks so this won't be seen.");
+
+	}
+
+}
 
 // message interface
 interface IMsgEvent extends Backbone.IEvent {
@@ -32,12 +50,4 @@ function callback(msg: string): void {
 	alert("new message: " + msg);
 }
 
-var handler = new MessageHandler();
-// add the event callback
-handler.msgEvent.Add(callback);
-// trigger the event
-handler.changeMsg("im the new message and discovered through a typed event!");
 
-// remove the event callback
-handler.msgEvent.Remove(callback);
-handler.changeMsg("no callbacks so this won't be seen.");

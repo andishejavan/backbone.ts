@@ -1,7 +1,35 @@
-
+/// <reference path="lib/jQuery-1.8.d.ts" />
 
 module Backbone {
 
+	/**
+	* Interface for DOM events.
+	**/
+	export interface IDOMEvent {
+		fn(e: JQueryEventObject): JQuery;
+		event: string;
+		selector?: string;
+	}
+
+	/**
+	* Simple implementation of IDOMEvent for internal use within Backbone.ts.
+	* Use IDOMEvent extrnally of Backbone.ts for your own custom objects or
+	* if all you need is a base implementation then use this.
+	**/
+	export class DOMEvent implements IDOMEvent {
+
+		/**
+		* Initializes a DOMEvent within a Backbone.View.
+		* @fn: The DOMEvent callback, takes a JQueryEventObject and returns JQuery.
+		* @event: The event name.
+		* @event: The event's selector, default is no selector.
+		**/
+		constructor (
+			public fn: (e: JQueryEventObject) => JQuery, 
+			public event: string,
+			public selector?: string = undefined) {
+		}
+	}
 	
 	/**
 	* IEvent, extend your own version of this interface to give typed

@@ -72,6 +72,14 @@
     </Content>
     <Content Include="Test\Tests.html" />
     <TypeScriptCompile Include="Test\EventTest.ts" />
+    <TypeScriptCompile Include="Test\ViewTest.ts" />
+    <TypeScriptCompile Include="Test\Tests.ts" />
+    <Content Include="Test\Tests.js">
+      <DependentUpon>Tests.ts</DependentUpon>
+    </Content>
+    <Content Include="Test\ViewTest.js">
+      <DependentUpon>ViewTest.ts</DependentUpon>
+    </Content>
     <Content Include="View.js">
       <DependentUpon>View.ts</DependentUpon>
     </Content>

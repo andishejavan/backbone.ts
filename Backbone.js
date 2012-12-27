@@ -1,7 +1,7 @@
 var Backbone;
 (function (Backbone) {
-    Backbone.Version = "0.1";
+    Backbone.Version = "0.3";
     Backbone.$ = jQuery;
-    Backbone._ = Backbone._;
+    Backbone._ = (window)._;
 })(Backbone || (Backbone = {}));
 //@ sourceMappingURL=Backbone.js.map
