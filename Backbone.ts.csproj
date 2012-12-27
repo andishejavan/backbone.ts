@@ -55,6 +55,10 @@
     <TypeScriptCompile Include="Backbone.ts" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="Attribute.ts" />
+    <Content Include="Attribute.js">
+      <DependentUpon>Attribute.ts</DependentUpon>
+    </Content>
     <Content Include="Backbone.js">
       <DependentUpon>Backbone.ts</DependentUpon>
     </Content>

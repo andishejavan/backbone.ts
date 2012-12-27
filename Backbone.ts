@@ -7,6 +7,7 @@
 /// <reference path="lib/underscore-1.4.d.ts" />
 /// <reference path="lib/jQuery-1.8.d.ts" />
 
+/// <reference path="Attribute.ts" />
 /// <reference path="Event.ts" />
 /// <reference path="View.ts" />
 /// <reference path="Model.ts" />
@@ -32,7 +33,7 @@ module Backbone {
 	/**
 	* Map from CRUD to HTTP for our default `Backbone.sync` implementation.
 	**/
-	export var RestMethods = {
+	export var MethodType = {
 		CREATE: 'POST',
 		UPDATE: 'PUT',
 		DELETE: 'DELETE',
@@ -51,7 +52,7 @@ module Backbone {
 	* @settings the jQuery ajax settings including all jqXHR callbacks.
 	* @return the jqXHR object that $.ajax creates for the sync request.
 	**/
-	export function sync(method: string, model: Model, settings?: JQueryAjaxSettings): JQueryXHR {
+	export function Sync(method: string, model: Model, settings?: JQueryAjaxSettings): JQueryXHR {
 
 		settings || (settings = {});
 
@@ -59,13 +60,13 @@ module Backbone {
 		var params: JQueryAjaxSettings = { 
 			type: method, 
 			dataType: 'json', 
-			url: model.url(),
+			url: model.Url(),
 		};
 
 		// Ensure that we have the appropriate request data.
-		if (model && (method === RestMethods.CREATE || method === RestMethods.UPDATE)) {
+		if (model && (method === MethodType.CREATE || method === MethodType.UPDATE)) {
 			params.contentType = 'application/json';
-			params.data = JSON.stringify(model.toJSON());
+			params.data = JSON.stringify(model.ToJSON());
 		}
 
 		// Don't process data on a non-GET request.
