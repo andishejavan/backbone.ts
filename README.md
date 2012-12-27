@@ -3,116 +3,48 @@ backbone.ts
 
 Full backbone.js port to typescript, this is not just a definitions file for backbone.d.js.
 
-Inspired to learn more in-depth on how backbone.js works and at the same time the new typescript language.
+v0.3
+====
 
-## backbone.ts 0.9.2 release
+Re-working the repository after much learned on the box2dweb.d.ts project.  There will be a backbone.min.ts provided so that multiple files do not have to be linked against for production.
 
-### Class based inheritence
+Re-working events to be completely typed.  DOM events will remain as is.  This also means that moving forward the main classes like Model, View, Collection will no longer inherit from the Event class.  Rather they will expose events directly.  The user will need to extend the classes and add their specifiec events directly.  This has the advantage of removing the discoverability issue of events.
 
-backbone.ts offers the following interfaces and classes to extend directly within your typescript code.
+```javascript
 
-#### Backbone.IEventHandler
-
-Using as an argument for an arbitrary type that implements the IEventHandler:
-<pre><code>
-function foo(handler: IEventHandler, condition: any): void {
-  if(conditon === something) 
-    handler.trigger('my-event');
+// Backbone IEvent declaration
+interface IEvent {
+  Add(fn: () => void): void;
+  Remove(fn: () => void): void;
+  Trigger(...args: any[]): void;
 }
-</code></pre>
 
-Implementing the IEventHandler Example: <br />
-Note that Backbone.Events implemenation provides the default
-backbone.js implementation for you already.
-<pre><code>
-class Foo implements IEventHandler {
-
-  public on(events: string, callback: (...args: any[]) => any, context?: any) {
-    ...
-  }
-
-  public off(events?: string, callback?: (...args: any[]) => any, context?: any) {
-    ...
-  }
-
-  public trigger(events: string, ...args: any[])) {
-    ...
-  }
-}
-</code></pre>
-
-#### Backbone.Events
-
-Provides the ported backbone.js IEventHandler implementation.  All other Backbone.ts classes inherit from the Events class.
-<pre><code>
-  on()
-  off()
-  trigger()
+// Generic Backbone IEvent implementation
+// This can be used for any typings
+class Event implements IEvent {
   
-  bind()    // for legacy
-  unbind()  // for legacy
-</code></pre>
-
-
-#### Backbone.Model
-
-<pre><code>
-class MyModel extends Model {
-
-  // todo: add explicit options for constructor
-
-  // override the validate function
-  // implementation from backbone.js documentation:
-  public validate(attributes: any, options?: any): any {
-    if (attrs.end  attrs.start) {
-      return "can't end before it starts";
-    }
-  }
 }
-</code></pre>
 
-#### Backbone.Collection
-
-<pre><code>
-class MyCollection extends Collection {
-
-  // todo: add explicit options for constructor
-
-  // there are no functions to override
+// User defined interface to make IEvent have true typing
+interface IMessageEvent extends IEvent {
+    Add(fn: (msg: string) => void): void;
+    Remove(fn: (msg: string) => void): void;
+    Trigger(msg: string): void;
 }
-</code></pre>
 
-#### Backbone.View
+// However the intstance can still be just the base Backbone.Event class
+var messageEvent: IMessageEvent = new Backbone.Event();
 
-<pre><code>
-class MyView extends View {
+```
 
-  // todo: add explicit options for constructor
 
-  // backbone.js documentation:
-  // **render** is the core function that your view should override, in order
-  // to populate its element (`this.el`), with the appropriate HTML. The
-  // convention is for **render** to always return `this`.
-  public render(): View {
-    return this;
-  }
-}
-</code></pre>
+v0.2
+====
 
-#### Backbone.Router
+Expirmental, more direct typing.  Removing the readme from this section since it is quite large and outdated.
 
-<pre><code>
-// todo: add explicit options for constructor
+v0.1 -> Also backbone.ts 0.9.2
+=============================
 
-var router = new Backbone.Router(options);
-</code></pre>
+Direct port, tagged as v0.1
 
-#### Backbone.History
-
-There is also a Backbone.history: History object that is automatically instantiated when History.route(args) is invoked.  This is invoked when a Router class is instantiated.
-
-<pre><code>
-// todo: add explicit options for constructor
-
-var history = new Backbone.History(options);
-</code></pre>
