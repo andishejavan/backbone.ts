@@ -1,3 +1,5 @@
+/// <reference path="Backbone.ts" />
+
 
 module Backbone {
 
