@@ -2,19 +2,19 @@ module.exports = function(grunt) {
 
 	// Project configuration
 	grunt.initConfig({
-		pkg: grunt.file.readJSON('package.json');
+		pkg: grunt.file.readJSON('package.json'),
 		dirs: {
 			obj: 'obj/Debug',
 			bin: 'bin'
 		},
 		
-		concat: {
-			options: {
-				separator: ';'
+		exec: {
+			tsc: {
+				cmd: 'tsc --comments --declaration --out <%= pkg.name %>-<%= pkg.version %>.js Backbone.ts Attribute.ts Model.ts View.ts Collection.ts'
 			},
-			dist: {
-				src: ['Backbone.js', 'Attribute.js', 'Model.js', 'View.js', 'Collection.js'],
-				dest: '<%= dirs.obj %>/<%= pkg.name %>-<%= pkg.version %>.concat.js'
+			
+			declarations: {
+				cmd: 'tsc --out <%= pkg.name %>-<% pkg.version %>.d.ts --declaration Backbone.ts Attribute.ts Model.ts View.ts Collection.ts'
 			}
 		},
 		
@@ -23,15 +23,15 @@ module.exports = function(grunt) {
 			
 			},
 			build: {
-				src: '<%= dirs.obj %>/<%= pkg.name %>.concat.js',
-				dest: '<%= dirs.bin %>/<%= pkg.name %>-<%= pkg.version %>.min.js'
+				src: '<%= pkg.name %>-<%= pkg.version %>.js',
+				dest: '<%= pkg.name %>-<%= pkg.version %>.min.js'
 			}
 		}
 	});
 	
-	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-exec');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
 	
-	// Run concat and uglify by default.
-	grunt.registerTask('default', ['concat', 'uglify']);
+	grunt.registerTask('default', ['exec:tsc', 'uglify']);
 }
