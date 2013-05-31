@@ -18,7 +18,7 @@ module Backbone {
 	/**
 	* Backbone.ts version.
 	**/
-	export var Version = "0.3";
+	export var Version = "0.3.0";
 
 	/**
 	* Handle to jQuery.
