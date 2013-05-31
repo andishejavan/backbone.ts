@@ -1,3 +1,4 @@
 *.map
-obj\*
-bin\*
+obj/
+bin/
+*.suo
