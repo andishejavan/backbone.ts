@@ -1,4 +1,5 @@
 *.map
 obj/
 bin/
+node_modules/
 *.suo
