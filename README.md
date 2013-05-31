@@ -1,50 +1,47 @@
 backbone.ts
 ===========
 
-Full backbone.js port to typescript, this is not just a definitions file for backbone.d.js.
+Full backbone.js port to typescript, this is not just a definitions file (backbone.d.ts) for backbone.js.
+
+Build
+=====
+
+To generate the single backbone.min.js and backbone.d.ts files install node and run the following commands from the root project directory.
+
+Dependencies:
+* node.js
+* grunt.js
+
+```javascript
+npm install
+grunt
+```
+
+Changelog
+=========
 
 v0.3
 ====
 
-Re-working the repository after much learned on the box2dweb.d.ts project.  There will be a backbone.min.ts provided so that multiple files do not have to be linked against for production.
+Added automated build to generate single .js and .d.ts files.
 
-Re-working events to be completely typed.  DOM events will remain as is.  This also means that moving forward the main classes like Model, View, Collection will no longer inherit from the Event class.  Rather they will expose events directly.  The user will need to extend the classes and add their specifiec events directly.  This has the advantage of removing the discoverability issue of events.
+Build Dependencies
+* node.js (pkg deps)
+* grunt.js (automated build)
+* tsc (typescript compiler)
 
-```javascript
-
-// Backbone IEvent declaration
-interface IEvent {
-  Add(fn: () => void): void;
-  Remove(fn: () => void): void;
-  Trigger(...args: any[]): void;
-}
-
-// Generic Backbone IEvent implementation
-// This can be used for any typings
-class Event implements IEvent {
-  
-}
-
-// User defined interface to make IEvent have true typing
-interface IMessageEvent extends IEvent {
-    Add(fn: (msg: string) => void): void;
-    Remove(fn: (msg: string) => void): void;
-    Trigger(msg: string): void;
-}
-
-// However the intstance can still be just the base Backbone.Event class
-var messageEvent: IMessageEvent = new Backbone.Event();
-
-```
-
+Runtime Dependencies
+* jQuery
+* underscore.js
 
 v0.2
 ====
 
 Expirmental, more direct typing.  Removing the readme from this section since it is quite large and outdated.
 
-v0.1 -> Also backbone.ts 0.9.2
+v0.1
 =============================
 
 Direct port, tagged as v0.1
+Was also labeled as backbone.ts 0.9.2 (was the current version of backbone.js available at the time)
 
