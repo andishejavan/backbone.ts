@@ -52,23 +52,23 @@
     <TypeScriptSourceMap> --sourcemap</TypeScriptSourceMap>
   </PropertyGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Backbone.ts" />
+    <TypeScriptCompile Include="src\Backbone.ts" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Attribute.ts" />
-    <Content Include="Attribute.js">
+    <TypeScriptCompile Include="src\Attribute.ts" />
+    <Content Include="src\Attribute.js">
       <DependentUpon>Attribute.ts</DependentUpon>
     </Content>
-    <Content Include="Backbone.js">
+    <Content Include="src\Backbone.js">
       <DependentUpon>Backbone.ts</DependentUpon>
     </Content>
-    <Content Include="Collection.js">
+    <Content Include="src\Collection.js">
       <DependentUpon>Collection.ts</DependentUpon>
     </Content>
-    <Content Include="Event.js">
+    <Content Include="src\Event.js">
       <DependentUpon>Event.ts</DependentUpon>
     </Content>
-    <Content Include="Model.js">
+    <Content Include="src\Model.js">
       <DependentUpon>Model.ts</DependentUpon>
     </Content>
     <Content Include="Test\EventTest.js">
@@ -84,13 +84,13 @@
     <Content Include="Test\ViewTest.js">
       <DependentUpon>ViewTest.ts</DependentUpon>
     </Content>
-    <Content Include="View.js">
+    <Content Include="src\View.js">
       <DependentUpon>View.ts</DependentUpon>
     </Content>
-    <TypeScriptCompile Include="View.ts" />
-    <TypeScriptCompile Include="Model.ts" />
-    <TypeScriptCompile Include="Event.ts" />
-    <TypeScriptCompile Include="Collection.ts" />
+    <TypeScriptCompile Include="src\View.ts" />
+    <TypeScriptCompile Include="src\Model.ts" />
+    <TypeScriptCompile Include="src\Event.ts" />
+    <TypeScriptCompile Include="src\Collection.ts" />
     <Content Include="lib\jQuery-1.8.d.ts" />
     <Content Include="lib\underscore-1.4.d.ts" />
   </ItemGroup>

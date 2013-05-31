@@ -4,8 +4,8 @@
 //     For all details and documentation:
 //     https://github.com/jbaldwin/backbone.ts
 
-/// <reference path="lib/underscore-1.4.d.ts" />
-/// <reference path="lib/jQuery-1.8.d.ts" />
+/// <reference path="../lib/underscore-1.4.d.ts" />
+/// <reference path="../lib/jQuery-1.8.d.ts" />
 
 /// <reference path="Attribute.ts" />
 /// <reference path="Event.ts" />
