@@ -6,7 +6,7 @@ var EventTest = (function () {
         handler.changeMsg("im the new message and discovered through a typed event!");
         handler.msgEvent.Remove(callback);
         handler.changeMsg("no callbacks so this won't be seen.");
-    }
+    };
     return EventTest;
 })();
 var MessageHandler = (function () {

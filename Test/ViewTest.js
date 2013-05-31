@@ -7,24 +7,28 @@ var ViewTest = (function () {
     function ViewTest() { }
     ViewTest.RunTests = function RunTests() {
         var clickMe = new ClickMe("clickMe", $("#content"));
-        clickMe.render();
-        clickMe.render();
-    }
+        clickMe.Render();
+        clickMe.Render();
+    };
     return ViewTest;
 })();
 var ClickMe = (function (_super) {
     __extends(ClickMe, _super);
     function ClickMe(id, $parent) {
-        _super.call(this, id, $("<button>").get(), [
-    new Backbone.DOMEvent(ClickMe.prototype.onClick, "click"), 
-    new Backbone.DOMEvent(ClickMe.prototype.mouseOver, "mouseover"), 
-    new Backbone.DOMEvent(ClickMe.prototype.mouseOut, "mouseout")
-]);
+        _super.call(this, {
+    id: id,
+    el: $("<button>").get(),
+    domEvents: [
+        new Backbone.DOMEvent(ClickMe.prototype.onClick, "click"), 
+        new Backbone.DOMEvent(ClickMe.prototype.mouseOver, "mouseover"), 
+        new Backbone.DOMEvent(ClickMe.prototype.mouseOut, "mouseout")
+    ]
+});
         this.clickedCount = 0;
         this.$parent = $parent;
     }
-    ClickMe.prototype.render = function () {
-        console.log("rendering " + this.id);
+    ClickMe.prototype.Render = function () {
+        console.log("rendering " + this.Id);
         this.$parent.append(this.$el);
         this.$el.html("Click Me!");
         this.$el.show();

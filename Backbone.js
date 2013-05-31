@@ -27,6 +27,6 @@ var Backbone;
         return Backbone.$.ajax(Backbone._.extend(params, settings));
     }
     Backbone.Sync = Sync;
-    ; ;
+    ;
 })(Backbone || (Backbone = {}));
 //@ sourceMappingURL=Backbone.js.map

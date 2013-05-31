@@ -48,18 +48,18 @@ module Backbone {
 		/**
 		* Model's ID.
 		**/
-		public ID: string = undefined;
+		public Id: string = undefined;
 
 		/**
 		* The default name for the JSON `id` attribute is "id".
 		* Set this to the JSON `id` attribute value that should be used.
 		**/
-		public IDAttribute: string = "id";
+		public IdAttribute: string = "id";
 
 		/**
 		* Automatically assigned client ID.
 		**/
-		public ClientID: string;
+		public ClientId: string;
 
 		/**
 		* Current set of attributes for this model.
@@ -80,7 +80,7 @@ module Backbone {
 		* The model's collection if it is a part of one.
 		* If the model is not a part of a collection this is undefined.
 		**/
-		public collection: Collection = undefined;
+		public Collection: Collection = undefined;
 
 		/**
 		* The model's URL root when fetching/saving/destroying.
@@ -134,7 +134,7 @@ module Backbone {
 			this.OnDestroyed = new Event(this);
 			this.OnValidateError = new Event(this);
 
-			this.ClientID = Backbone._.uniqueId('model_');
+			this.ClientId = Backbone._.uniqueId('model_');
 			this.Attributes = attributes;
 			this._urlRoot = urlRoot;
 		}
@@ -151,8 +151,8 @@ module Backbone {
 		public ToJSON(): any {
 			var json = {};
 			// Inject the ID attribute.
-			if (!Backbone._.isUndefined(this.ID) || !Backbone._.isNull(this.ID)) {
-				json[this.IDAttribute] = this.ID;
+			if (!Backbone._.isUndefined(this.Id) || !Backbone._.isNull(this.Id)) {
+				json[this.IdAttribute] = this.Id;
 			}
 
 			for (var key in this.Attributes) {
@@ -229,10 +229,10 @@ module Backbone {
 		* Clears the entire model.  Only the ClientID remains.
 		**/
 		public Clear() {
-			this.ID = undefined;
+			this.Id = undefined;
 			this.Attributes = {};
 			this.Previous = {};
-			this.collection = undefined;
+			this.Collection = undefined;
 			this.OnChange.Clear();
 			this.OnFetch.Clear();
 			this.OnSave.Clear();
@@ -387,11 +387,11 @@ module Backbone {
 		* @return Model's fetch/save/destroy URL, or URL root if new.
 		**/
 		public Url(): string {
-			var base = this._urlRoot || this.collection.Url() || "/";
+			var base = this._urlRoot || this.Collection.Url() || "/";
 			if (this.IsNew) {
 				return base;
 			}
-			return base + (base.charAt(base.length - 1) == "/" ? "" : "/") + encodeURIComponent(this.ID);
+			return base + (base.charAt(base.length - 1) == "/" ? "" : "/") + encodeURIComponent(this.Id);
 
 		}
 
@@ -411,14 +411,14 @@ module Backbone {
 		**/
 		public Parse(data: any, jqxhr: JQueryXHR): IAttributeBag {
 			// Extract the ID if it is present in the data by default.
-			if (!Backbone._.isUndefined(data[this.IDAttribute])) {
-				this.ID = data[this.IDAttribute]
+			if (!Backbone._.isUndefined(data[this.IdAttribute])) {
+				this.Id = data[this.IdAttribute]
 			}
 
 			// Convert to IAttributeBag.
 			var attributes: IAttributeBag = {};
 			for (var key in data) {
-				if (key === this.IDAttribute) {
+				if (key === this.IdAttribute) {
 					continue;
 				}
 				attributes[key] = new Attribute(key, data[key]);
@@ -442,7 +442,7 @@ module Backbone {
 		* @return True if the model does not have an assigned ID, otherwise false.
 		**/
 		public IsNew(): bool {
-			return this.ID === undefined || this.ID === null;
+			return this.Id === undefined || this.Id === null;
 		}
 
 		/**

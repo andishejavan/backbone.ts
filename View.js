@@ -1,59 +1,65 @@
 var Backbone;
 (function (Backbone) {
     var View = (function () {
-        function View(id, el, domEvents, delegateDOMEvents) {
-            if (typeof domEvents === "undefined") { domEvents = new Array(); }
-            if (typeof delegateDOMEvents === "undefined") { delegateDOMEvents = true; }
-            this.data = undefined;
-            if(Backbone._.isNull(id) || Backbone._.isUndefined(id)) {
+        function View(settings) {
+            this.Data = undefined;
+            var options = Backbone._.extend({
+            }, settings, View._defaults);
+            if(Backbone._.isNull(options.id) || Backbone._.isUndefined(options.id)) {
                 throw new Error("View 'id' cannot be null or undefined.");
             }
-            if(Backbone._.isNull(el) || Backbone._.isUndefined(el)) {
+            if(Backbone._.isNull(options.el) || Backbone._.isUndefined(options.el)) {
                 throw new Error("View 'el' cannot be null or undefined.");
             }
-            this.id = id;
-            this.cid = Backbone._.uniqueId('view_');
-            this._domEvents = domEvents;
-            this.setElement(el, delegateDOMEvents);
+            this.Id = options.id;
+            this.ClientId = Backbone._.uniqueId('view_');
+            this._domEvents = options.domEvents;
+            this.SetElement(options.el, options.delegateDOMEvents);
         }
+        View._defaults = {
+            id: undefined,
+            el: undefined,
+            domEvents: [],
+            delegateDOMEvents: false
+        };
         View.prototype.$ = function (selector) {
             return this.$el.find(selector);
         };
-        View.prototype.render = function () {
+        View.prototype.Render = function () {
             return this;
         };
-        View.prototype.remove = function () {
+        View.prototype.Remove = function () {
             this.$el.remove();
             return this;
         };
-        View.prototype.detach = function () {
+        View.prototype.Detach = function () {
             this.$el.detach();
             return this;
         };
-        View.prototype.setElement = function (el, delegate) {
+        View.prototype.SetElement = function (el, delegate) {
             if (typeof delegate === "undefined") { delegate = true; }
             if(Backbone._.isNull(el) || Backbone._.isUndefined(el)) {
                 throw new Error("View `el` cannot be null or undefined.");
             }
             if(this.$el) {
-                this.undelegateEvents();
+                this.UndelegateEvents();
             }
             this.$el = Backbone.$(el);
-            this.el = this.$el[0];
+            this.El = this.$el[0];
             if(delegate) {
-                this.delegateEvents(this._domEvents);
+                this.DelegateEvents(this._domEvents);
             }
             return this;
         };
-        View.prototype.delegateEvents = function (domEvents) {
+        View.prototype.DelegateEvents = function (domEvents) {
             if(domEvents.length <= 0) {
                 return;
             }
             this._domEvents = Backbone._.clone(domEvents);
-            this.undelegateEvents();
+            this.UndelegateEvents();
             for(var key in domEvents) {
                 var func = Backbone._.bind(domEvents[key].fn, this);
-                var eventName = domEvents[key].event + '.delegateEvents' + this.cid;
+                var eventName = domEvents[key].event + '.delegateEvents' + this.ClientId;
                 if(domEvents[key].selector === undefined) {
                     this.$el.on(eventName, func);
                 } else {
@@ -61,9 +67,9 @@ var Backbone;
                 }
             }
         };
-        View.prototype.undelegateEvents = function () {
+        View.prototype.UndelegateEvents = function () {
             this._domEvents = new Array();
-            this.$el.off('.delegateEvents' + this.cid);
+            this.$el.off('.delegateEvents' + this.ClientId);
         };
         return View;
     })();
